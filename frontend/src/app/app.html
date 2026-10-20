@@ -1,0 +1,687 @@
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <h2>SkillSphere <span>Nexus</span></h2>
+    <p class="nav-label">WORKSPACE</p>
+
+    <button class="nav-item" [class.active]="currentPage === 'dashboard'" (click)="currentPage = 'dashboard'"> ▦ &nbsp; Dashboard </button>
+    <button *ngIf="isHrAdmin" class="nav-item" [class.active]="currentPage === 'employees'" (click)="currentPage = 'employees'"> ♙ &nbsp; Employees </button>
+    <button class="nav-item" [class.active]="currentPage === 'skills'" (click)="currentPage = 'skills'; loadSkills()"> ◇ &nbsp; Skill Catalog </button>
+    <button class="nav-item" [class.active]="currentPage === 'mappings'" (click)="currentPage = 'mappings'; loadEmployeeSkillAssignments()"> ⎇ &nbsp; Employee Skills </button>
+    <button class="nav-item" [class.active]="currentPage === 'assessments'" (click)="currentPage = 'assessments'; loadAssessments()"> ▤ &nbsp; Assessments </button>
+    <button class="nav-item" [class.active]="currentPage === 'frameworks'" (click)="currentPage = 'frameworks'; loadFrameworks()"> ◌ &nbsp; Frameworks </button>
+    <button class="nav-item" [class.active]="currentPage === 'certifications'" (click)="currentPage = 'certifications'; loadCertifications()"> ✧ &nbsp; Certifications </button>
+
+    <div class="sidebar-footer">
+      <span>{{ authService.currentUser?.username }}</span>
+      <button class="logout-btn" type="button" (click)="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <p class="error-message" role="alert" *ngIf="authService.authorizationMessage">{{ authService.authorizationMessage }}</p>
+    <section *ngIf="currentPage === 'dashboard'">
+      <header class="topbar">
+        <div>
+          <h1>SkillSphere Nexus</h1>
+          <p>{{ isHrAdmin ? 'Employee skills and competency management.' : 'Your skills, assessments and certifications.' }}</p>
+        </div>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <p>{{ isHrAdmin ? 'Total Employees' : 'Your Employee Record' }}</p>
+          <h2>{{ isHrAdmin ? employees.length : (employees[0]?.name || 'Loading') }}</h2>
+          <span>{{ isHrAdmin ? 'Live database records' : (employees[0]?.department || 'Linked to your account') }}</span>
+        </article>
+
+        <article class="stat-card">
+          <p>Total Skills</p>
+          <h2>{{ skills.length }}</h2>
+          <span>Skills in the catalog</span>
+        </article>
+
+        <article class="stat-card">
+          <p>Employee API</p>
+          <h2 class="api-status">{{ loading ? 'Loading' : (errorMessage ? 'Check API' : 'Connected') }}</h2>
+          <span>Spring Boot employee service</span>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>{{ isHrAdmin ? 'Milestone 1: Employee Skill Management' : 'Your SkillSphere Profile' }}</h2>
+        <p>{{ isHrAdmin ? 'Manage employee profiles, skill assignments, assessments, frameworks and certifications.' : 'Your account is linked to ' + (employees[0]?.email || 'your employee record') + '.' }}</p>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="currentPage = 'employees'">Manage Employees</button>
+        <button class="secondary-btn" (click)="currentPage = 'skills'; loadSkills()">Open Skill Catalog</button>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'employees'">
+      <header class="topbar">
+        <div>
+          <h1>Employee Management</h1>
+          <p>Manage your employee records.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddForm()">+ Add Employee</button>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <p>Total Employees</p>
+          <h2>{{ employees.length }}</h2>
+          <span>Live database records</span>
+        </article>
+        <article class="stat-card">
+          <p>API Status</p>
+          <h2 class="api-status">{{ loading ? 'Loading' : (errorMessage ? 'Check API' : 'Connected') }}</h2>
+          <span>Spring Boot employee service</span>
+        </article>
+      </section>
+
+      <p class="success-message" *ngIf="successMessage">{{ successMessage }}</p>
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+      <section class="panel" *ngIf="showForm">
+        <h2>{{ editingId === null ? 'Add Employee' : 'Edit Employee' }}</h2>
+        <form #employeeForm="ngForm" (ngSubmit)="saveEmployee()">
+          <div class="form-grid">
+            <label>
+              Full name
+              <input name="name" [(ngModel)]="employee.name" required maxlength="100" />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" [(ngModel)]="employee.email" required email />
+            </label>
+            <label>
+              Job title
+              <input name="jobTitle" [(ngModel)]="employee.jobTitle" required maxlength="100" />
+            </label>
+            <label>
+              Department
+              <input name="department" [(ngModel)]="employee.department" required maxlength="100" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="employeeForm.invalid">{{ editingId === null ? 'Save Employee' : 'Update Employee' }}</button>
+            <button class="secondary-btn" type="button" (click)="cancelForm()">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Employee Directory</h2>
+            <p>Employee records loaded from your backend</p>
+          </div>
+          <button class="secondary-btn" (click)="loadEmployees()">Refresh</button>
+        </div>
+
+        <p *ngIf="loading">Loading employees...</p>
+
+        <div class="table-wrap" *ngIf="!loading">
+          <table>
+            <thead>
+              <tr>
+                <th>EMPLOYEE</th>
+                <th>JOB TITLE</th>
+                <th>DEPARTMENT</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of employees">
+                <td>
+                  <strong>{{ item.name }}</strong>
+                  <small>{{ item.email }}</small>
+                </td>
+                <td>{{ item.jobTitle }}</td>
+                <td>{{ item.department }}</td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditForm(item)">Edit</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteEmployee(item)">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="employees.length === 0">
+                <td colspan="4">No employees found. Click Add Employee to create one.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'skills'">
+      <header class="topbar">
+        <div>
+          <h1>Skill Catalog</h1>
+          <p>Manage technical, domain, and soft skills.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddSkillForm()">+ Add Skill</button>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <p>Total Skills</p>
+          <h2>{{ skills.length }}</h2>
+          <span>Live database records</span>
+        </article>
+        <article class="stat-card">
+          <p>Skill API</p>
+          <h2 class="api-status">{{ skillsLoading ? 'Loading' : (skillErrorMessage ? 'Check API' : 'Connected') }}</h2>
+          <span>Spring Boot skill service</span>
+        </article>
+      </section>
+
+      <p class="success-message" *ngIf="skillSuccessMessage">{{ skillSuccessMessage }}</p>
+      <p class="error-message" *ngIf="skillErrorMessage">{{ skillErrorMessage }}</p>
+
+      <section class="panel" *ngIf="showSkillForm">
+        <h2>{{ editingSkillId === null ? 'Add Skill' : 'Edit Skill' }}</h2>
+        <form #skillForm="ngForm" (ngSubmit)="saveSkill()">
+          <div class="form-grid">
+            <label>
+              Skill name
+              <input name="skillName" [(ngModel)]="skill.name" required maxlength="100" />
+            </label>
+            <label>
+              Category
+              <select name="category" [(ngModel)]="skill.category" required>
+                <option value="Technical">Technical</option>
+                <option value="Domain">Domain</option>
+                <option value="Soft">Soft Skills</option>
+              </select>
+            </label>
+            <label>
+              Description
+              <input name="description" [(ngModel)]="skill.description" maxlength="500" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="skillForm.invalid">{{ editingSkillId === null ? 'Save Skill' : 'Update Skill' }}</button>
+            <button class="secondary-btn" type="button" (click)="cancelSkillForm()">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Available Skills</h2>
+            <p>Skills stored in your PostgreSQL database</p>
+          </div>
+          <button class="secondary-btn" (click)="loadSkills()">Refresh</button>
+        </div>
+        <p *ngIf="skillsLoading">Loading skills...</p>
+        <div class="table-wrap" *ngIf="!skillsLoading">
+          <table>
+            <thead>
+              <tr>
+                <th>SKILL</th>
+                <th>CATEGORY</th>
+                <th>DESCRIPTION</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of skills">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.category }}</td>
+                <td>{{ item.description || '—' }}</td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditSkillForm(item)">Edit</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteSkill(item)">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="skills.length === 0"><td colspan="4">No skills found. Click Add Skill to create one.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'mappings'">
+      <header class="topbar">
+        <div>
+          <h1>Employee–Skill Mapping</h1>
+          <p>Assign skills, update proficiency and verification states.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddAssignmentForm()">+ Add Assignment</button>
+      </header>
+      <p class="success-message" *ngIf="employeeSkillSuccess">{{ employeeSkillSuccess }}</p>
+      <p class="error-message" *ngIf="employeeSkillError">{{ employeeSkillError }}</p>
+
+      <section class="panel" *ngIf="showAssignmentForm">
+        <h2>{{ editingAssignmentId === null ? 'Assign Skill' : 'Update Assignment' }}</h2>
+        <form #assignmentForm="ngForm" (ngSubmit)="saveAssignment()">
+          <div class="form-grid">
+            <label>
+              Employee
+              <select [(ngModel)]="assignment.employeeId" name="employeeId" required>
+                <option [ngValue]="undefined" disabled>Select employee</option>
+                <option *ngFor="let employee of employees" [ngValue]="employee.id">{{ employee.name }}</option>
+              </select>
+            </label>
+            <label>
+              Skill
+              <select [(ngModel)]="assignment.skillId" name="skillId" required>
+                <option [ngValue]="undefined" disabled>Select skill</option>
+                <option *ngFor="let skill of skills" [ngValue]="skill.id">{{ skill.name }}</option>
+              </select>
+            </label>
+            <label>
+              Proficiency (1-10)
+              <input type="number" min="1" max="10" [(ngModel)]="assignment.proficiency" name="proficiency" required />
+            </label>
+            <label>
+              Verification status
+              <select [(ngModel)]="assignment.verificationStatus" name="verificationStatus">
+                <option value="PENDING_VERIFICATION">Pending Verification</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </label>
+            <label>
+              Assessment date
+              <input type="date" [(ngModel)]="assignment.assessmentDate" name="assessmentDate" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="assignmentForm.invalid">{{ editingAssignmentId === null ? 'Save Assignment' : 'Update Assignment' }}</button>
+            <button class="secondary-btn" type="button" (click)="showAssignmentForm = false">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Skill Assignments</h2>
+            <p>Employee proficiency and verification details</p>
+          </div>
+          <button class="secondary-btn" (click)="loadEmployeeSkillAssignments()">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>EMPLOYEE</th>
+                <th>SKILL</th>
+                <th>PROFICIENCY</th>
+                <th>STATUS</th>
+                <th>DATE</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of employeeSkillAssignments">
+                <td>{{ item.employee?.name ?? 'Unknown employee' }}</td>
+                <td>{{ item.skill?.name ?? 'Unknown skill' }}</td>
+                <td>{{ item.proficiency }}/10</td>
+                <td><span [class]="getBadgeClass(item.verificationStatus)">{{ item.verificationStatus }}</span></td>
+                <td>{{ item.assessmentDate || '—' }}</td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditAssignmentForm(item)">Edit</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteAssignment(item)">Remove</button>
+                </td>
+              </tr>
+              <tr *ngIf="employeeSkillAssignments.length === 0"><td colspan="6">No skill assignments yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'assessments'">
+      <header class="topbar">
+        <div>
+          <h1>Skill Assessments</h1>
+          <p>Track assessment history, scoring and verification state.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddAssessmentForm()">+ Add Assessment</button>
+      </header>
+      <p class="success-message" *ngIf="assessmentSuccess">{{ assessmentSuccess }}</p>
+      <p class="error-message" *ngIf="assessmentError">{{ assessmentError }}</p>
+
+      <section class="panel" *ngIf="showAssessmentForm">
+        <h2>{{ editingAssessmentId === null ? 'Create Assessment' : 'Update Assessment' }}</h2>
+        <form #assessmentForm="ngForm" (ngSubmit)="saveAssessment()">
+          <div class="form-grid">
+            <label>
+              Employee
+              <select [(ngModel)]="assessment.employeeId" name="employeeId" required>
+                <option [ngValue]="undefined" disabled>Select employee</option>
+                <option *ngFor="let employee of employees" [ngValue]="employee.id">{{ employee.name }}</option>
+              </select>
+            </label>
+            <label>
+              Skill
+              <select [(ngModel)]="assessment.skillId" name="skillId" required>
+                <option [ngValue]="undefined" disabled>Select skill</option>
+                <option *ngFor="let skill of skills" [ngValue]="skill.id">{{ skill.name }}</option>
+              </select>
+            </label>
+            <label>
+              Score
+              <input type="number" [(ngModel)]="assessment.score" name="score" min="0" required />
+            </label>
+            <label>
+              Max score
+              <input type="number" [(ngModel)]="assessment.maxScore" name="maxScore" min="1" required />
+            </label>
+            <label>
+              Assessment method
+              <input [(ngModel)]="assessment.assessmentMethod" name="assessmentMethod" required />
+            </label>
+            <label>
+              Assessor or verifier
+              <input [(ngModel)]="assessment.assessorName" name="assessorName" />
+            </label>
+            <label>
+              Assessment date
+              <input type="date" [(ngModel)]="assessment.assessmentDate" name="assessmentDate" required />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="assessmentForm.invalid">{{ editingAssessmentId === null ? 'Save Assessment' : 'Update Assessment' }}</button>
+            <button class="secondary-btn" type="button" (click)="showAssessmentForm = false">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Assessment History</h2>
+            <p>Employee and skill assessment records</p>
+          </div>
+          <button class="secondary-btn" (click)="loadAssessments()">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>EMPLOYEE</th>
+                <th>SKILL</th>
+                <th>SCORE</th>
+                <th>METHOD</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of assessments">
+                <td>{{ item.employee?.name ?? 'Unknown employee' }}</td>
+                <td>{{ item.skill?.name ?? 'Unknown skill' }}</td>
+                <td>{{ item.score }}/{{ item.maxScore }}</td>
+                <td>{{ item.assessmentMethod }}</td>
+                <td><span [class]="getBadgeClass(item.verificationStatus)">{{ item.verificationStatus }}</span></td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditAssessmentForm(item)">Edit</button>
+                  <button *ngIf="isHrAdmin && item.verificationStatus === 'PENDING_VERIFICATION'" class="edit-btn" (click)="verifyAssessment(item, 'VERIFIED')">Verify</button>
+                  <button *ngIf="isHrAdmin && item.verificationStatus === 'PENDING_VERIFICATION'" class="secondary-btn" (click)="verifyAssessment(item, 'REJECTED')">Reject</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteAssessment(item)">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="assessments.length === 0"><td colspan="6">No assessments available.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'frameworks'">
+      <header class="topbar">
+        <div>
+          <h1>Competency Frameworks</h1>
+          <p>Define role requirements and compare them to employee proficiency.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddFrameworkForm()">+ Add Framework</button>
+      </header>
+      <p class="success-message" *ngIf="frameworkSuccess">{{ frameworkSuccess }}</p>
+      <p class="error-message" *ngIf="frameworkError">{{ frameworkError }}</p>
+
+      <section class="panel" *ngIf="frameworkFormVisible">
+        <h2>{{ editingFrameworkId === null ? 'Create Framework' : 'Update Framework' }}</h2>
+        <form #frameworkForm="ngForm" (ngSubmit)="saveFramework()">
+          <div class="form-grid">
+            <label>
+              Framework name
+              <input [(ngModel)]="framework.name" name="frameworkName" required />
+            </label>
+            <label>
+              Role title
+              <input [(ngModel)]="framework.roleTitle" name="roleTitle" required />
+            </label>
+            <label>
+              Description
+              <input [(ngModel)]="framework.description" name="description" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="frameworkForm.invalid">{{ editingFrameworkId === null ? 'Save Framework' : 'Update Framework' }}</button>
+            <button class="secondary-btn" type="button" (click)="frameworkFormVisible = false">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Framework Library</h2>
+            <p>Role-based competency definitions</p>
+          </div>
+          <button class="secondary-btn" (click)="loadFrameworks()">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>FRAMEWORK</th>
+                <th>ROLE</th>
+                <th>DESCRIPTION</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of frameworks">
+                <td>{{ item.name }}</td>
+                <td>{{ item.roleTitle }}</td>
+                <td>{{ item.description || '—' }}</td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditFrameworkForm(item)">Edit</button>
+                  <button class="secondary-btn" (click)="selectFramework(item.id ?? null)">View</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteFramework(item)">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="frameworks.length === 0"><td colspan="4">No frameworks yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" *ngIf="selectedFrameworkId != null">
+        <h2>Required Skills</h2>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddRequirementForm()">+ Add Requirement</button>
+        <div class="panel" *ngIf="requirementFormVisible">
+          <form #requirementForm="ngForm" (ngSubmit)="saveRequirement()">
+            <div class="form-grid">
+              <label>
+                Skill
+                <select [(ngModel)]="requirement.skillId" name="skillId" required>
+                  <option [ngValue]="undefined" disabled>Select skill</option>
+                  <option *ngFor="let skill of skills" [ngValue]="skill.id">{{ skill.name }}</option>
+                </select>
+              </label>
+              <label>
+                Required proficiency
+                <input type="number" min="1" max="10" [(ngModel)]="requirement.requiredProficiency" name="requiredProficiency" required />
+              </label>
+              <label>
+                Notes
+                <input [(ngModel)]="requirement.notes" name="notes" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="primary-btn" type="submit" [disabled]="requirementForm.invalid">Save Requirement</button>
+              <button class="secondary-btn" type="button" (click)="requirementFormVisible = false">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>SKILL</th>
+              <th>REQUIRED</th>
+              <th>NOTES</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let requirement of frameworkRequirements">
+              <td>{{ requirement.skill?.name ?? 'Unknown skill' }}</td>
+              <td>{{ requirement.requiredProficiency }}/10</td>
+              <td>{{ requirement.notes || '—' }}</td>
+              <td class="actions">
+                <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditRequirementForm(requirement)">Edit</button>
+                <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteRequirement(requirement)">Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="frameworkRequirements.length === 0"><td colspan="4">No role requirements defined.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel" *ngIf="selectedFrameworkId != null">
+        <h2>Skill Gap Analysis</h2>
+        <label>
+          Employee
+          <select [(ngModel)]="selectedGapEmployeeId" name="selectedGapEmployeeId" (change)="loadGapReport()">
+            <option [ngValue]="null" disabled>Select employee</option>
+            <option *ngFor="let employee of employees" [ngValue]="employee.id">{{ employee.name }}</option>
+          </select>
+        </label>
+        <table *ngIf="gapReport.length > 0">
+          <thead>
+            <tr>
+              <th>SKILL</th>
+              <th>REQUIRED</th>
+              <th>EMPLOYEE</th>
+              <th>GAP</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let gap of gapReport">
+              <td>{{ gap.skillName }}</td>
+              <td>{{ gap.requiredProficiency }}/10</td>
+              <td>{{ gap.employeeProficiency ?? '—' }}</td>
+              <td>{{ gap.gap }}</td>
+              <td><span [class]="getBadgeClass(gap.status)">{{ gap.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="gapReport.length === 0">Select an employee to see the gap report.</p>
+      </section>
+    </section>
+
+    <section *ngIf="currentPage === 'certifications'">
+      <header class="topbar">
+        <div>
+          <h1>Certifications</h1>
+          <p>Track employee certifications, renewal requirements and verification status.</p>
+        </div>
+        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddCertificationForm()">+ Add Certification</button>
+      </header>
+      <p class="success-message" *ngIf="certificationSuccess">{{ certificationSuccess }}</p>
+      <p class="error-message" *ngIf="certificationError">{{ certificationError }}</p>
+
+      <section class="panel" *ngIf="showCertificationForm">
+        <h2>{{ editingCertificationId === null ? 'Create Certification' : 'Update Certification' }}</h2>
+        <form #certificationForm="ngForm" (ngSubmit)="saveCertification()">
+          <div class="form-grid">
+            <label>
+              Employee
+              <select [(ngModel)]="certification.employeeId" name="employeeId" required>
+                <option [ngValue]="undefined" disabled>Select employee</option>
+                <option *ngFor="let employee of employees" [ngValue]="employee.id">{{ employee.name }}</option>
+              </select>
+            </label>
+            <label>
+              Certification name
+              <input [(ngModel)]="certification.name" name="name" required />
+            </label>
+            <label>
+              Issuing organization
+              <input [(ngModel)]="certification.issuingOrganization" name="issuingOrganization" required />
+            </label>
+            <label>
+              Credential ID
+              <input [(ngModel)]="certification.credentialId" name="credentialId" />
+            </label>
+            <label>
+              Issue date
+              <input type="date" [(ngModel)]="certification.issueDate" name="issueDate" required />
+            </label>
+            <label>
+              Expiry date (optional)
+              <input type="date" [(ngModel)]="certification.expiryDate" name="expiryDate" />
+            </label>
+            <label>
+              Verification status
+              <select [(ngModel)]="certification.verificationStatus" name="verificationStatus">
+                <option value="PENDING_VERIFICATION">Pending Verification</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-btn" type="submit" [disabled]="certificationForm.invalid">{{ editingCertificationId === null ? 'Save Certification' : 'Update Certification' }}</button>
+            <button class="secondary-btn" type="button" (click)="showCertificationForm = false">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Certification Register</h2>
+            <p>Renewal reminders are calculated from issue and expiry dates</p>
+          </div>
+          <button class="secondary-btn" (click)="loadCertifications()">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>EMPLOYEE</th>
+                <th>CERTIFICATION</th>
+                <th>ISSUER</th>
+                <th>EXPIRY</th>
+                <th>STATUS</th>
+                <th>ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of certifications">
+                <td>{{ item.employee?.name ?? 'Unknown employee' }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.issuingOrganization }}</td>
+                <td>{{ item.expiryDate || 'No expiry' }}</td>
+                <td><span [class]="getBadgeClass(item.status)">{{ item.status ?? 'ACTIVE' }}</span></td>
+                <td class="actions">
+                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditCertificationForm(item)">Edit</button>
+                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteCertification(item)">Delete</button>
+                </td>
+              </tr>
+              <tr *ngIf="certifications.length === 0"><td colspan="6">No certifications tracked yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+</div>

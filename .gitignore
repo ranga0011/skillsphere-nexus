@@ -1,0 +1,32 @@
+﻿# Java / Spring Boot
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Angular / Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local database files and backups
+*.dump
+*.backup
+*.bak

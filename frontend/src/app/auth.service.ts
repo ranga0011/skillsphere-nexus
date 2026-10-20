@@ -1,0 +1,82 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+
+export interface AuthUser {
+  username: string;
+  role: 'HR_ADMIN' | 'EMPLOYEE';
+  employeeId: number | null;
+}
+
+interface LoginResponse extends AuthUser {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+}
+
+interface AuthSession {
+  user: AuthUser;
+  token: string;
+  expiresAt: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly apiUrl = 'http://localhost:8080/api/auth';
+  private readonly session = signal<AuthSession | null>(null);
+  private readonly authorizationError = signal('');
+
+  constructor(private http: HttpClient) {}
+
+  get currentUser(): AuthUser | null {
+    return this.activeSession()?.user ?? null;
+  }
+
+  get token(): string | null {
+    return this.activeSession()?.token ?? null;
+  }
+
+  get isAuthenticated(): boolean {
+    return this.activeSession() !== null;
+  }
+
+  get isHrAdmin(): boolean {
+    return this.currentUser?.role === 'HR_ADMIN';
+  }
+
+  get authorizationMessage(): string {
+    return this.authorizationError();
+  }
+
+  setAuthorizationDenied(): void {
+    this.authorizationError.set('Your account is not permitted to perform that action.');
+  }
+
+  login(username: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { username, password }).pipe(
+      tap((response) => this.session.set({
+        user: {
+          username: response.username,
+          role: response.role,
+          employeeId: response.employeeId
+        },
+        token: response.accessToken,
+        expiresAt: Date.now() + response.expiresIn * 1000
+      }))
+    );
+  }
+
+  logout(): void {
+    this.session.set(null);
+    this.authorizationError.set('');
+  }
+
+  private activeSession(): AuthSession | null {
+    const session = this.session();
+    if (session && Date.now() >= session.expiresAt) {
+      this.session.set(null);
+      return null;
+    }
+    return session;
+  }
+}

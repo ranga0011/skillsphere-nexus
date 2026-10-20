@@ -1,0 +1,115 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #17243a;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(ellipse at 15% 12%, #dceaf8 0, transparent 40%), #f5f7fb;
+}
+
+.login-panel {
+  width: min(100%, 420px);
+  padding: 38px;
+  border: 1px solid #dce4ef;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgb(26 51 82 / 9%);
+}
+
+.brand-mark {
+  display: grid;
+  width: 42px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 8px;
+  background: #285ca8;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.eyebrow {
+  margin: 24px 0 8px;
+  color: #285ca8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.2;
+}
+
+.intro {
+  margin: 10px 0 28px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+label {
+  display: block;
+  margin: 18px 0 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  color: #17243a;
+  font: inherit;
+}
+
+input:focus-visible {
+  outline: 2px solid #6095e8;
+  outline-offset: 2px;
+}
+
+button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: #285ca8;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.form-error {
+  margin: 14px 0 0;
+  color: #a61b1b;
+  font-size: 14px;
+}
+
+.login-footer {
+  position: fixed;
+  bottom: 16px;
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .login-panel {
+    padding: 28px 22px;
+  }
+}
