@@ -928,6 +928,9 @@ export class WorkspaceComponent implements OnInit {
   openAddCertificationForm(): void {
     this.editingCertificationId = null;
     this.certification = this.emptyCertification();
+    if (!this.isHrAdmin) {
+      this.certification.employeeId = this.authService.currentUser?.employeeId ?? this.employees[0]?.id;
+    }
     this.showCertificationForm = true;
     this.certificationError = '';
     this.certificationSuccess = '';
@@ -936,7 +939,7 @@ export class WorkspaceComponent implements OnInit {
   openEditCertificationForm(item: Certification): void {
     this.editingCertificationId = item.id ?? null;
     this.certification = {
-      employeeId: item.employeeId ?? item.employee?.id,
+      employeeId: item.employeeId ?? item.employee?.id ?? (this.isHrAdmin ? undefined : (this.authService.currentUser?.employeeId ?? this.employees[0]?.id)),
       name: item.name,
       issuingOrganization: item.issuingOrganization,
       credentialId: item.credentialId ?? '',
@@ -952,6 +955,10 @@ export class WorkspaceComponent implements OnInit {
   saveCertification(): void {
     this.certificationError = '';
     this.certificationSuccess = '';
+
+    if (!this.certification.employeeId && !this.isHrAdmin) {
+      this.certification.employeeId = this.authService.currentUser?.employeeId ?? this.employees[0]?.id;
+    }
 
     if (!this.certification.employeeId) {
       this.certificationError = 'Select an employee before saving the certification.';

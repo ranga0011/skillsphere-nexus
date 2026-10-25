@@ -777,7 +777,7 @@
           <h1>Certifications</h1>
           <p>Track employee certifications, renewal requirements and verification status.</p>
         </div>
-        <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddCertificationForm()">+ Add Certification</button>
+        <button class="primary-btn" (click)="openAddCertificationForm()">+ Add Certification</button>
       </header>
       <p class="success-message" *ngIf="certificationSuccess">{{ certificationSuccess }}</p>
       <p class="error-message" *ngIf="certificationError">{{ certificationError }}</p>
@@ -831,27 +831,31 @@
       </section>
 
       <section class="panel" *ngIf="showCertificationForm">
-        <h2>{{ editingCertificationId === null ? 'Create Certification' : 'Update Certification' }}</h2>
+        <h2>{{ editingCertificationId === null ? 'Register Certification' : 'Update Certification' }}</h2>
         <form #certificationForm="ngForm" (ngSubmit)="saveCertification()">
           <div class="form-grid">
-            <label>
+            <label *ngIf="isHrAdmin">
               Employee
               <select [(ngModel)]="certification.employeeId" name="employeeId" required>
                 <option [ngValue]="undefined" disabled>Select employee</option>
                 <option *ngFor="let employee of employees" [ngValue]="employee.id">{{ employee.name }}</option>
               </select>
             </label>
+            <label *ngIf="!isHrAdmin">
+              Employee
+              <input [value]="employees[0]?.name || authService.currentUser?.username" disabled />
+            </label>
             <label>
               Certification name
-              <input [(ngModel)]="certification.name" name="name" required />
+              <input [(ngModel)]="certification.name" name="name" required placeholder="e.g. AWS Solutions Architect" />
             </label>
             <label>
               Issuing organization
-              <input [(ngModel)]="certification.issuingOrganization" name="issuingOrganization" required />
+              <input [(ngModel)]="certification.issuingOrganization" name="issuingOrganization" required placeholder="e.g. Amazon Web Services" />
             </label>
             <label>
               Credential ID
-              <input [(ngModel)]="certification.credentialId" name="credentialId" />
+              <input [(ngModel)]="certification.credentialId" name="credentialId" placeholder="e.g. AWS-883921" />
             </label>
             <label>
               Issue date
@@ -861,13 +865,17 @@
               Expiry date (optional)
               <input type="date" [(ngModel)]="certification.expiryDate" name="expiryDate" />
             </label>
-            <label>
+            <label *ngIf="isHrAdmin">
               Verification status
               <select [(ngModel)]="certification.verificationStatus" name="verificationStatus">
                 <option value="PENDING_VERIFICATION">Pending Verification</option>
                 <option value="VERIFIED">Verified</option>
                 <option value="REJECTED">Rejected</option>
               </select>
+            </label>
+            <label *ngIf="!isHrAdmin">
+              Verification status
+              <input value="Pending Verification (Audited by HR)" disabled />
             </label>
           </div>
           <div class="form-actions">
@@ -926,8 +934,8 @@
                 <td><span [class]="getBadgeClass(item.status)">{{ item.status ?? 'ACTIVE' }}</span></td>
                 <td class="actions">
                   <button class="renew-btn" type="button" (click)="renewCertificationRecord(item.id)">↻ Renew</button>
-                  <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditCertificationForm(item)">Edit</button>
-                  <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteCertification(item)">Delete</button>
+                  <button class="edit-btn" (click)="openEditCertificationForm(item)">Edit</button>
+                  <button class="delete-btn" (click)="deleteCertification(item)">Delete</button>
                 </td>
               </tr>
               <tr *ngIf="certifications.length === 0"><td colspan="6">No certifications tracked yet.</td></tr>

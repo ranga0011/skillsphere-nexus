@@ -41,6 +41,9 @@ public class CertificationController {
             authorizationService.requireEmployeeAccess(employeeId);
             return certificationService.getCertificationsByEmployee(employeeId);
         }
+        if (authorizationService.isEmployee()) {
+            return certificationService.getCertificationsByEmployee(authorizationService.getCurrentEmployeeId());
+        }
         if (!authorizationService.isHrAdmin()) {
             throw new org.springframework.security.access.AccessDeniedException("Employee filter is required");
         }
@@ -58,37 +61,66 @@ public class CertificationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('HR_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public Certification createCertification(@RequestBody Certification request) {
+        Long targetEmployeeId;
+        com.skillsphere.skill.entity.VerificationStatus verificationStatus;
+        if (authorizationService.isEmployee()) {
+            targetEmployeeId = authorizationService.getCurrentEmployeeId();
+            verificationStatus = com.skillsphere.skill.entity.VerificationStatus.PENDING_VERIFICATION;
+        } else if (authorizationService.isHrAdmin()) {
+            targetEmployeeId = request.getEmployeeId();
+            verificationStatus = request.getVerificationStatus() != null ? request.getVerificationStatus() : com.skillsphere.skill.entity.VerificationStatus.VERIFIED;
+        } else {
+            throw new org.springframework.security.access.AccessDeniedException("Must be an authenticated employee or HR admin to add certifications");
+        }
+
         return certificationService.createCertification(
-                request.getEmployeeId(),
+                targetEmployeeId,
                 request.getName(),
                 request.getIssuingOrganization(),
                 request.getCredentialId(),
                 request.getIssueDate(),
                 request.getExpiryDate(),
-                request.getVerificationStatus());
+                verificationStatus);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('HR_ADMIN')")
     public Certification updateCertification(@PathVariable Long id, @RequestBody Certification request) {
+        Certification existing = certificationService.getCertificationById(id);
+        Long targetEmployeeId = existing.getEmployeeId();
+        com.skillsphere.skill.entity.VerificationStatus verificationStatus = existing.getVerificationStatus();
+
+        if (authorizationService.isEmployee()) {
+            authorizationService.requireEmployeeAccess(existing.getEmployeeId());
+            verificationStatus = com.skillsphere.skill.entity.VerificationStatus.PENDING_VERIFICATION;
+        } else if (authorizationService.isHrAdmin()) {
+            targetEmployeeId = request.getEmployeeId() != null ? request.getEmployeeId() : existing.getEmployeeId();
+            verificationStatus = request.getVerificationStatus() != null ? request.getVerificationStatus() : existing.getVerificationStatus();
+        } else {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied");
+        }
+
         return certificationService.updateCertification(
                 id,
-                request.getEmployeeId(),
+                targetEmployeeId,
                 request.getName(),
                 request.getIssuingOrganization(),
                 request.getCredentialId(),
                 request.getIssueDate(),
                 request.getExpiryDate(),
-                request.getVerificationStatus());
+                verificationStatus);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('HR_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteCertification(@PathVariable Long id) {
+        Certification existing = certificationService.getCertificationById(id);
+        if (authorizationService.isEmployee()) {
+            authorizationService.requireEmployeeAccess(existing.getEmployeeId());
+        } else if (!authorizationService.isHrAdmin()) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied");
+        }
         certificationService.deleteCertification(id);
     }
 
