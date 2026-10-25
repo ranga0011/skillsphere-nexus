@@ -7,9 +7,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.context.annotation.Profile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile({"local", "docker", "prod"})
 public class InitialAdminInitializer implements ApplicationRunner {
     private static final Logger logger = LoggerFactory.getLogger(InitialAdminInitializer.class);
 
@@ -19,8 +21,8 @@ public class InitialAdminInitializer implements ApplicationRunner {
     private final String password;
 
     public InitialAdminInitializer(AppUserRepository appUserRepository, PasswordEncoder passwordEncoder,
-            @Value("${app.security.initial-admin.username:${INITIAL_ADMIN_USERNAME:}}") String username,
-            @Value("${app.security.initial-admin.password:${INITIAL_ADMIN_PASSWORD:}}") String password) {
+            @Value("${INITIAL_ADMIN_USERNAME:${app.security.initial-admin.username:}}") String username,
+            @Value("${INITIAL_ADMIN_PASSWORD:${app.security.initial-admin.password:}}") String password) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.username = username;

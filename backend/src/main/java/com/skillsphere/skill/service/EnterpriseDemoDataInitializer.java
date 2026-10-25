@@ -32,6 +32,7 @@ import com.skillsphere.skill.security.AppUserRepository;
 import com.skillsphere.skill.security.UserRole;
 
 @Component
+@org.springframework.context.annotation.Profile({"local", "docker", "demo"})
 public class EnterpriseDemoDataInitializer implements ApplicationRunner {
 
     private final CourseRepository courseRepository;
