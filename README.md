@@ -18,6 +18,35 @@ SkillSphere Nexus is an enterprise web application designed to manage employee a
 
 ---
 
+## 🔐 Demo & Evaluation Login Credentials
+
+The application is pre-configured with active accounts for testing all role-based dashboards:
+
+| Portal / Role | Email / Username | Password | Access Scope |
+| :--- | :--- | :--- | :--- |
+| **HR Administrator** | `admin@skillsphere.com` | `admin123456789` | Full administrative dashboard, employee & student auditing, competency frameworks, course catalog, LMS sync, analytics. |
+| **Employee Portal** | `employee@skillsphere.com` | `employee12345` | Employee self-service dashboard, career roadmap, certification registration & management, internal job postings. |
+| **Student Portal** | `student@skillsphere.com` | `student12345` | Student learning dashboard, MCQ assessments, automated PDF achievement certificates, learning path tracking. |
+
+> **Web Application URL**: [http://localhost:4200](http://localhost:4200)  
+> **Backend REST API**: [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 🐳 Docker Quick Start
+
+To run the entire system (PostgreSQL 17, Spring Boot Backend, and Nginx Frontend) in Docker:
+
+```bash
+docker compose up -d
+```
+
+- **Frontend Application**: [http://localhost:4200](http://localhost:4200)
+- **Backend API & Health**: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+- **PostgreSQL Database**: Port `5433` (internal `5432`)
+
+---
+
 ## Technology Stack
 
 | Component | Technology |
