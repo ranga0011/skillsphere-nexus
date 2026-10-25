@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,7 +57,7 @@ public class SkillAssessmentController {
     @GetMapping("/{id}")
     public SkillAssessment getAssessmentById(@PathVariable Long id) {
         SkillAssessment assessment = skillAssessmentService.getAssessmentById(id);
-        authorizationService.requireEmployeeAccess(assessment.getEmployeeId());
+        authorizationService.requireProfileAccess(assessment.getEmployeeId(), assessment.getStudentId());
         return assessment;
     }
 
@@ -64,6 +65,12 @@ public class SkillAssessmentController {
     public List<SkillAssessment> getAssessmentsByEmployee(@PathVariable Long employeeId) {
         authorizationService.requireEmployeeAccess(employeeId);
         return skillAssessmentService.getAssessmentsByEmployee(employeeId);
+    }
+
+    @GetMapping("/student/{studentId}")
+    public List<SkillAssessment> getAssessmentsByStudent(@PathVariable Long studentId) {
+        authorizationService.requireStudentAccess(studentId);
+        return skillAssessmentService.getAssessmentsByStudent(studentId);
     }
 
     @GetMapping("/skill/{skillId}")
@@ -76,6 +83,16 @@ public class SkillAssessmentController {
     @PreAuthorize("hasRole('HR_ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public SkillAssessment createAssessment(@RequestBody SkillAssessment request) {
+        if (request.getStudentId() != null) {
+            return skillAssessmentService.createStudentAssessment(
+                    request.getStudentId(),
+                    request.getSkillId(),
+                    request.getScore(),
+                    request.getMaxScore(),
+                    request.getAssessmentMethod(),
+                    request.getAssessorName(),
+                    request.getAssessmentDate());
+        }
         return skillAssessmentService.createAssessment(
                 request.getEmployeeId(),
                 request.getSkillId(),
@@ -102,8 +119,11 @@ public class SkillAssessmentController {
 
     @PutMapping("/{id}/verification")
     @PreAuthorize("hasRole('HR_ADMIN')")
-    public SkillAssessment verifyAssessment(@PathVariable Long id, @RequestBody Map<String, VerificationStatus> request) {
-        return skillAssessmentService.verifyAssessment(id, request.get("verificationStatus"));
+    public SkillAssessment verifyAssessment(@PathVariable Long id,
+            @RequestBody Map<String, VerificationStatus> request,
+            Authentication authentication) {
+        return skillAssessmentService.verifyAssessment(
+                id, request.get("verificationStatus"), authentication.getName());
     }
 
     @DeleteMapping("/{id}")

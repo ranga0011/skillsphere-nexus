@@ -16,13 +16,13 @@ export const roleGuard: CanActivateFn = (route) => {
   const allowedRoles = route.data['roles'] as string[];
   return allowedRoles.includes(auth.currentUser?.role ?? '')
     ? true
-    : router.createUrlTree([auth.isHrAdmin ? '/hr' : '/employee']);
+    : router.createUrlTree([auth.isHrAdmin ? '/hr' : auth.currentUser?.role === 'STUDENT' ? '/student' : '/employee']);
 };
 
 export const homeGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return router.createUrlTree(auth.isAuthenticated
-    ? [auth.isHrAdmin ? '/hr' : '/employee']
+    ? [auth.isHrAdmin ? '/hr' : auth.currentUser?.role === 'STUDENT' ? '/student' : '/employee']
     : ['/login']);
 };

@@ -11,13 +11,15 @@ import { AssessmentService } from './assessment.service';
 import { FrameworkService } from './framework.service';
 import { CertificationService } from './certification.service';
 import { AuthService } from './auth.service';
+import { IssuedCertificateService } from './issued-certificate.service';
 import {
   Assessment,
   Certification,
   CompetencyFramework,
   CompetencyGap,
   EmployeeSkillAssignment,
-  FrameworkSkillRequirement
+  FrameworkSkillRequirement,
+  IssuedCertificate
 } from './feature-models';
 
 interface Employee {
@@ -94,9 +96,13 @@ export class WorkspaceComponent implements OnInit {
   gapReport: CompetencyGap[] = [];
 
   certifications: Certification[] = [];
+  achievementCertificates: IssuedCertificate[] = [];
   certificationLoading = false;
   certificationError = '';
   certificationSuccess = '';
+  achievementCertificateLoading = false;
+  achievementCertificateError = '';
+  downloadingAchievementId: number | null = null;
   showCertificationForm = false;
   editingCertificationId: number | null = null;
   certification: Certification = this.emptyCertification();
@@ -108,6 +114,7 @@ export class WorkspaceComponent implements OnInit {
     private assessmentService: AssessmentService,
     private frameworkService: FrameworkService,
     private certificationService: CertificationService,
+    private issuedCertificateService: IssuedCertificateService,
     @Inject(AuthService) public authService: AuthService,
     private router: Router
   ) {}
@@ -133,6 +140,14 @@ export class WorkspaceComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     void this.router.navigateByUrl('/login');
+  }
+
+  goToStudentAccounts(): void {
+    void this.router.navigateByUrl('/hr/students');
+  }
+
+  goToAdminLearning(): void {
+    void this.router.navigateByUrl('/hr/learning');
   }
 
   private loadCurrentEmployeeData(): void {
@@ -581,6 +596,7 @@ export class WorkspaceComponent implements OnInit {
       next: () => {
         this.assessmentSuccess = status === 'VERIFIED' ? 'Assessment verified.' : 'Assessment rejected.';
         this.loadAssessments();
+        this.loadAchievementCertificates();
       },
       error: (error) => {
         this.assessmentError = 'Could not update assessment verification.';
@@ -799,6 +815,56 @@ export class WorkspaceComponent implements OnInit {
         console.error('Loading certifications failed:', error);
       }
     });
+    this.loadAchievementCertificates();
+  }
+
+  loadAchievementCertificates(): void {
+    this.achievementCertificateLoading = true;
+    this.achievementCertificateError = '';
+    this.issuedCertificateService.getCertificates().subscribe({
+      next: (certificates) => {
+        this.achievementCertificates = certificates;
+        this.achievementCertificateLoading = false;
+      },
+      error: (error) => {
+        this.achievementCertificateLoading = false;
+        this.achievementCertificateError = 'Could not load achievement certificates.';
+        console.error('Loading achievement certificates failed:', error);
+      }
+    });
+  }
+
+  downloadAchievementCertificate(certificate: IssuedCertificate): void {
+    this.downloadingAchievementId = certificate.id;
+    this.issuedCertificateService.saveDownload(certificate).subscribe({
+      next: () => {
+        this.downloadingAchievementId = null;
+      },
+      error: (error) => {
+        this.downloadingAchievementId = null;
+        this.achievementCertificateError = error.status === 410
+          ? 'This certificate has been revoked and cannot be downloaded.'
+          : 'Could not download the achievement certificate.';
+        console.error('Downloading achievement certificate failed:', error);
+      }
+    });
+  }
+
+  revokeAchievementCertificate(certificate: IssuedCertificate): void {
+    const reason = prompt('Enter the reason for revoking this certificate:');
+    if (!reason?.trim()) {
+      return;
+    }
+    this.issuedCertificateService.revokeCertificate(certificate.id, reason.trim()).subscribe({
+      next: () => {
+        this.certificationSuccess = `Certificate ${certificate.certificateNumber} was revoked.`;
+        this.loadAchievementCertificates();
+      },
+      error: (error) => {
+        this.achievementCertificateError = 'Could not revoke this certificate.';
+        console.error('Revoking achievement certificate failed:', error);
+      }
+    });
   }
 
   openAddCertificationForm(): void {
@@ -896,7 +962,10 @@ export class WorkspaceComponent implements OnInit {
       case 'EXPIRING_SOON':
         return 'status-pill warning';
       case 'EXPIRED':
+      case 'REVOKED':
         return 'status-pill danger';
+      case 'ISSUED':
+        return 'status-pill success';
       default:
         return 'status-pill neutral';
     }

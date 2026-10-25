@@ -41,7 +41,7 @@ public class EmployeeSkillMappingController {
     @GetMapping("/{id}")
     public EmployeeSkillMapping getMappingById(@PathVariable Long id) {
         EmployeeSkillMapping mapping = employeeSkillMappingService.getMappingById(id);
-        authorizationService.requireEmployeeAccess(mapping.getEmployeeId());
+        authorizationService.requireProfileAccess(mapping.getEmployeeId(), mapping.getStudentId());
         return mapping;
     }
 

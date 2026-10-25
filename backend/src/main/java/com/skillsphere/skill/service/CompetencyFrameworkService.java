@@ -2,12 +2,14 @@ package com.skillsphere.skill.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.skillsphere.skill.entity.CompetencyFramework;
 import com.skillsphere.skill.entity.CompetencyGap;
+import com.skillsphere.skill.entity.CompetencyGapReport;
 import com.skillsphere.skill.entity.EmployeeSkillMapping;
 import com.skillsphere.skill.entity.FrameworkSkillRequirement;
 import com.skillsphere.skill.entity.Skill;
@@ -16,6 +18,7 @@ import com.skillsphere.skill.repository.EmployeeRepository;
 import com.skillsphere.skill.repository.EmployeeSkillMappingRepository;
 import com.skillsphere.skill.repository.FrameworkSkillRequirementRepository;
 import com.skillsphere.skill.repository.SkillRepository;
+import com.skillsphere.skill.repository.StudentRepository;
 import com.skillsphere.skill.service.exception.DuplicateResourceException;
 import com.skillsphere.skill.service.exception.ResourceNotFoundException;
 
@@ -28,18 +31,21 @@ public class CompetencyFrameworkService {
     private final EmployeeSkillMappingRepository employeeSkillMappingRepository;
     private final EmployeeRepository employeeRepository;
     private final SkillRepository skillRepository;
+    private final StudentRepository studentRepository;
 
     public CompetencyFrameworkService(
             CompetencyFrameworkRepository competencyFrameworkRepository,
             FrameworkSkillRequirementRepository requirementRepository,
             EmployeeSkillMappingRepository employeeSkillMappingRepository,
             EmployeeRepository employeeRepository,
-            SkillRepository skillRepository) {
+            SkillRepository skillRepository,
+            StudentRepository studentRepository) {
         this.competencyFrameworkRepository = competencyFrameworkRepository;
         this.requirementRepository = requirementRepository;
         this.employeeSkillMappingRepository = employeeSkillMappingRepository;
         this.employeeRepository = employeeRepository;
         this.skillRepository = skillRepository;
+        this.studentRepository = studentRepository;
     }
 
     public CompetencyFramework createFramework(String name, String description, String roleTitle) {
@@ -151,43 +157,95 @@ public class CompetencyFrameworkService {
         employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
 
+        return calculateGapReport(frameworkId,
+                employeeSkillMappingRepository.findByEmployee_Id(employeeId));
+    }
+
+    public List<CompetencyGap> getStudentGapReport(Long frameworkId, Long studentId) {
+        if (frameworkId == null || frameworkId <= 0 || studentId == null || studentId <= 0) {
+            throw new IllegalArgumentException("Framework and student ids must be positive values");
+        }
+        getFrameworkById(frameworkId);
+        studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        return calculateGapReport(frameworkId,
+                employeeSkillMappingRepository.findByStudent_Id(studentId));
+    }
+
+    public CompetencyGapReport getEmployeeGapSummary(Long frameworkId, Long employeeId) {
+        return summarize(frameworkId, getGapReport(frameworkId, employeeId));
+    }
+
+    public CompetencyGapReport getStudentGapSummary(Long frameworkId, Long studentId) {
+        return summarize(frameworkId, getStudentGapReport(frameworkId, studentId));
+    }
+
+    private List<CompetencyGap> calculateGapReport(Long frameworkId, List<EmployeeSkillMapping> mappings) {
         List<FrameworkSkillRequirement> requirements = requirementRepository.findByFramework_Id(frameworkId);
-        List<EmployeeSkillMapping> mappings = employeeSkillMappingRepository.findByEmployee_Id(employeeId);
         List<CompetencyGap> gaps = new ArrayList<>();
-
         for (FrameworkSkillRequirement requirement : requirements) {
-            Integer requiredProficiency = requirement.getRequiredProficiency();
-            Integer employeeProficiency = null;
-            for (EmployeeSkillMapping mapping : mappings) {
-                if (requirement.getSkillId().equals(mapping.getSkillId())) {
-                    employeeProficiency = mapping.getProficiency();
-                    break;
-                }
-            }
-
-            String status;
-            int gap;
-            if (employeeProficiency == null) {
-                gap = requiredProficiency;
-                status = "NOT_ASSIGNED";
-            } else if (employeeProficiency >= requiredProficiency) {
-                gap = 0;
-                status = "MATCHED";
-            } else {
-                gap = requiredProficiency - employeeProficiency;
-                status = "UNDER_REQUIRED";
-            }
-
+            int required = requirement.getRequiredProficiency();
+            EmployeeSkillMapping mapping = mappings.stream()
+                    .filter(candidate -> requirement.getSkillId().equals(candidate.getSkillId()))
+                    .findFirst()
+                    .orElse(null);
+            Integer verifiedProficiency = mapping != null
+                    && mapping.getVerificationStatus() == com.skillsphere.skill.entity.VerificationStatus.VERIFIED
+                            ? mapping.getProficiency()
+                            : null;
+            int gap = Math.max(0, required - (verifiedProficiency == null ? 0 : verifiedProficiency));
+            String status = mapping == null
+                    ? "NOT_ASSIGNED"
+                    : verifiedProficiency == null ? "UNVERIFIED" : gap == 0 ? "MATCHED" : "UNDER_REQUIRED";
+            String evidenceStatus = mapping == null
+                    ? "MISSING"
+                    : mapping.getVerificationStatus().name();
+            String recommendation = switch (status) {
+                case "NOT_ASSIGNED" -> "Add this skill and request verification";
+                case "UNVERIFIED" -> "Complete verification for this skill";
+                case "UNDER_REQUIRED" -> "Improve verified proficiency by " + gap + " level(s)";
+                default -> "Requirement satisfied";
+            };
             gaps.add(new CompetencyGap(
                     requirement.getSkillId(),
                     requirement.getSkill() != null ? requirement.getSkill().getName() : null,
-                    requiredProficiency,
-                    employeeProficiency,
+                    required,
+                    verifiedProficiency,
                     gap,
-                    status));
+                    status,
+                    evidenceStatus,
+                    recommendation));
         }
-
         return gaps;
+    }
+
+    private CompetencyGapReport summarize(Long frameworkId, List<CompetencyGap> gaps) {
+        CompetencyFramework framework = getFrameworkById(frameworkId);
+        int totalRequiredLevels = 0;
+        int verifiedLevels = 0;
+        int satisfied = 0;
+        int missing = 0;
+        int unverified = 0;
+        int proficiencyGaps = 0;
+        for (CompetencyGap gap : gaps) {
+            int required = gap.getRequiredProficiency();
+            int currentProficiency = Optional.ofNullable(gap.getEmployeeProficiency()).orElse(0);
+            totalRequiredLevels += required;
+            verifiedLevels += Math.min(required, currentProficiency);
+            switch (gap.getStatus()) {
+                case "MATCHED" -> satisfied++;
+                case "NOT_ASSIGNED" -> missing++;
+                case "UNVERIFIED" -> unverified++;
+                case "UNDER_REQUIRED" -> proficiencyGaps++;
+                default -> {
+                }
+            }
+        }
+        double readiness = totalRequiredLevels == 0 ? 100.0 : verifiedLevels * 100.0 / totalRequiredLevels;
+        return new CompetencyGapReport(framework.getId(), framework.getName(), framework.getRoleTitle(),
+                gaps.size(), satisfied, missing, unverified, proficiencyGaps, readiness,
+                "Sum of each requirement's verified proficiency, capped at its required level, divided by the sum of required levels.",
+                gaps);
     }
 
     public void deleteFramework(Long id) {

@@ -31,6 +31,9 @@ public class JwtService {
         if (user.getEmployeeId() != null) {
             claims.claim("employeeId", user.getEmployeeId());
         }
+        if (user.getStudentId() != null) {
+            claims.claim("studentId", user.getStudentId());
+        }
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
@@ -38,6 +41,11 @@ public class JwtService {
 
     public static Long employeeIdFromClaims(Map<String, Object> claims) {
         Object value = claims.get("employeeId");
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
+    public static Long studentIdFromClaims(Map<String, Object> claims) {
+        Object value = claims.get("studentId");
         return value instanceof Number number ? number.longValue() : null;
     }
 }

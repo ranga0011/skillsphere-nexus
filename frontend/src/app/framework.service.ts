@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CompetencyFramework, FrameworkSkillRequirement, CompetencyGap } from './feature-models';
+import { CompetencyFramework, FrameworkSkillRequirement, CompetencyGap, CompetencyGapReport } from './feature-models';
 
 @Injectable({ providedIn: 'root' })
 export class FrameworkService {
@@ -43,5 +43,9 @@ export class FrameworkService {
 
   getGapReport(frameworkId: number, employeeId: number): Observable<CompetencyGap[]> {
     return this.http.get<CompetencyGap[]>(`${this.apiUrl}/${frameworkId}/gap-report/${employeeId}`);
+  }
+
+  getMyGapReport(frameworkId: number): Observable<CompetencyGapReport> {
+    return this.http.get<CompetencyGapReport>(`${this.apiUrl}/${frameworkId}/gap-report/me`);
   }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,7 +24,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 
 @Entity
-@Table(name = "skill_assessments")
+@Table(name = "skill_assessments", check = @CheckConstraint(
+        name = "ck_skill_assessment_owner",
+        constraint = "(employee_id IS NOT NULL AND student_id IS NULL) OR (employee_id IS NULL AND student_id IS NOT NULL)"))
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class SkillAssessment {
 
@@ -31,10 +34,13 @@ public class SkillAssessment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id", nullable = false)
-    @NotNull(message = "Employee is required")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
     private Employee employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
+    private Student student;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "skill_id", nullable = false)
@@ -70,6 +76,9 @@ public class SkillAssessment {
     private Long employeeId;
 
     @Transient
+    private Long studentId;
+
+    @Transient
     private Long skillId;
 
     public SkillAssessment() {
@@ -85,8 +94,29 @@ public class SkillAssessment {
 
     public void setEmployee(Employee employee) {
         this.employee = employee;
+        if (employee == null) {
+            this.employeeId = null;
+        }
         if (employee != null) {
             this.employeeId = employee.getId();
+            this.student = null;
+            this.studentId = null;
+        }
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+        if (student == null) {
+            this.studentId = null;
+        }
+        if (student != null) {
+            this.studentId = student.getId();
+            this.employee = null;
+            this.employeeId = null;
         }
     }
 
@@ -158,6 +188,17 @@ public class SkillAssessment {
 
     public void setEmployeeId(Long employeeId) {
         this.employeeId = employeeId;
+    }
+
+    public Long getStudentId() {
+        if (studentId != null) {
+            return studentId;
+        }
+        return student != null ? student.getId() : null;
+    }
+
+    public void setStudentId(Long studentId) {
+        this.studentId = studentId;
     }
 
     public Long getSkillId() {

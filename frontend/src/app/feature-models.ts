@@ -3,17 +3,20 @@ import { Skill } from './skill';
 export interface EmployeeSkillAssignment {
   id?: number;
   employeeId?: number;
+  studentId?: number;
   skillId?: number;
   proficiency: number;
   verificationStatus?: string;
   assessmentDate?: string;
   employee?: { id?: number; name?: string; email?: string };
+  student?: { id?: number; name?: string; email?: string };
   skill?: Skill;
 }
 
 export interface Assessment {
   id?: number;
   employeeId?: number;
+  studentId?: number;
   skillId?: number;
   score: number;
   maxScore: number;
@@ -22,6 +25,7 @@ export interface Assessment {
   verificationStatus?: string;
   assessorName?: string;
   employee?: { id?: number; name?: string; email?: string };
+  student?: { id?: number; name?: string; email?: string };
   skill?: Skill;
 }
 
@@ -48,6 +52,43 @@ export interface CompetencyGap {
   employeeProficiency?: number | null;
   gap: number;
   status: string;
+  evidenceStatus: string;
+  recommendation: string;
+}
+
+export interface CompetencyGapReport {
+  frameworkId: number;
+  frameworkName: string;
+  roleTitle: string;
+  requiredSkills: number;
+  satisfiedRequirements: number;
+  missingSkills: number;
+  unverifiedSkills: number;
+  proficiencyGaps: number;
+  readinessPercentage: number;
+  readinessFormula: string;
+  skills: CompetencyGap[];
+}
+
+export interface Student {
+  id: number;
+  name: string;
+  email: string;
+  program: string;
+}
+
+export interface IssuedCertificate {
+  id: number;
+  certificateNumber: string;
+  learnerName: string;
+  skillName: string;
+  issuerName: string;
+  issueDate: string;
+  status: 'ISSUED' | 'EXPIRED' | 'REVOKED';
+  proficiencyLevel: number;
+  verificationToken: string;
+  assessmentScore: number;
+  assessmentMaxScore: number;
 }
 
 export interface Certification {

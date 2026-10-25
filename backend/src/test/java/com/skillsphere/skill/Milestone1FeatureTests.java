@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jayway.jsonpath.JsonPath;
 import com.skillsphere.skill.entity.Employee;
 import com.skillsphere.skill.entity.Skill;
 import com.skillsphere.skill.entity.CompetencyGap;
@@ -36,10 +39,12 @@ import com.skillsphere.skill.repository.EmployeeRepository;
 import com.skillsphere.skill.repository.EmployeeSkillMappingRepository;
 import com.skillsphere.skill.repository.SkillAssessmentRepository;
 import com.skillsphere.skill.repository.SkillRepository;
+import com.skillsphere.skill.repository.IssuedCertificateRepository;
 import com.skillsphere.skill.service.CompetencyFrameworkService;
 import com.skillsphere.skill.service.CertificationService;
 import com.skillsphere.skill.service.EmployeeSkillMappingService;
 import com.skillsphere.skill.service.SkillAssessmentService;
+import com.skillsphere.skill.entity.IssuedCertificateStatus;
 import com.skillsphere.skill.service.exception.DuplicateResourceException;
 import com.skillsphere.skill.service.exception.ResourceNotFoundException;
 
@@ -72,6 +77,9 @@ class Milestone1FeatureTests extends IsolatedIntegrationTest {
 
     @Autowired
     private CertificationRepository certificationRepository;
+
+    @Autowired
+    private IssuedCertificateRepository issuedCertificateRepository;
 
     @Autowired
     private EmployeeSkillMappingService employeeSkillMappingService;
@@ -205,6 +213,96 @@ class Milestone1FeatureTests extends IsolatedIntegrationTest {
     }
 
     @Test
+    void gapAnalysisDoesNotCountUnverifiedSkillsAndComputesReadiness() {
+        var framework = competencyFrameworkService.createFramework("Verified role", "Evidence-aware report");
+        competencyFrameworkService.addRequirement(framework.getId(), skill.getId(), 8, "Required");
+        employeeSkillMappingService.assignSkill(employee.getId(), skill.getId(), 8,
+                VerificationStatus.PENDING_VERIFICATION, LocalDate.now());
+
+        CompetencyGap gap = competencyFrameworkService.getGapReport(framework.getId(), employee.getId()).getFirst();
+        assertEquals("UNVERIFIED", gap.getStatus());
+        assertNull(gap.getEmployeeProficiency());
+        assertEquals(8, gap.getGap());
+        assertEquals("PENDING_VERIFICATION", gap.getEvidenceStatus());
+        assertEquals(0.0, competencyFrameworkService.getEmployeeGapSummary(framework.getId(), employee.getId())
+                .readinessPercentage());
+
+        employeeSkillMappingService.updateMapping(
+                employeeSkillMappingRepository.findByEmployee_Id(employee.getId()).getFirst().getId(),
+                null, null, null, VerificationStatus.VERIFIED, null);
+        var summary = competencyFrameworkService.getEmployeeGapSummary(framework.getId(), employee.getId());
+        assertEquals(100.0, summary.readinessPercentage());
+        assertEquals(1, summary.satisfiedRequirements());
+    }
+
+    @Test
+    void verifiedPassingAssessmentIssuesOneValidPdfCertificate() throws Exception {
+        var assessment = skillAssessmentService.createAssessment(
+                employee.getId(), skill.getId(), 85, 100, "Practical", "Authorized assessor", LocalDate.now());
+        assertEquals(0, issuedCertificateRepository.findByEmployee_Id(employee.getId()).size());
+
+        skillAssessmentService.verifyAssessment(assessment.getId(), VerificationStatus.VERIFIED);
+        var issued = issuedCertificateRepository.findByEmployee_Id(employee.getId());
+        assertEquals(1, issued.size());
+        assertEquals(IssuedCertificateStatus.ISSUED, issued.getFirst().getStatus());
+        assertTrue(issued.getFirst().getCertificateNumber().startsWith("SSN-"));
+
+        byte[] pdf = issued.getFirst().getPdfContent();
+        try (var document = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            String text = new org.apache.pdfbox.text.PDFTextStripper().getText(document);
+            assertTrue(text.contains(employee.getName()));
+            assertTrue(text.contains(skill.getName()));
+            assertTrue(text.contains(issued.getFirst().getCertificateNumber()));
+            assertTrue(text.contains(issued.getFirst().getVerificationToken()));
+        }
+
+        skillAssessmentService.verifyAssessment(assessment.getId(), VerificationStatus.VERIFIED);
+        assertEquals(1, issuedCertificateRepository.findByEmployee_Id(employee.getId()).size());
+        assertNotNull(assertThrows(DuplicateResourceException.class,
+                () -> skillAssessmentService.deleteAssessment(assessment.getId())));
+        skillAssessmentService.verifyAssessment(assessment.getId(), VerificationStatus.REJECTED, "reviewer@example.com");
+        var revoked = issuedCertificateRepository.findByEmployee_Id(employee.getId()).getFirst();
+        assertEquals(IssuedCertificateStatus.REVOKED, revoked.getStatus());
+        assertEquals("reviewer@example.com", revoked.getRevokedBy());
+        assertNotNull(revoked.getRevokedAt());
+        assertEquals(VerificationStatus.PENDING_VERIFICATION,
+                employeeSkillMappingRepository.findByEmployee_Id(employee.getId()).getFirst().getVerificationStatus());
+    }
+
+    @Test
+    void rejectingVerifiedAssessmentRecalculatesProficiencyFromRemainingEvidence() {
+        var framework = competencyFrameworkService.createFramework("Evidence role", "Reverification behavior");
+        competencyFrameworkService.addRequirement(framework.getId(), skill.getId(), 10, "Required");
+        var first = skillAssessmentService.createAssessment(
+                employee.getId(), skill.getId(), 100, 100, "Practical", "Assessor", LocalDate.now().minusDays(1));
+        var second = skillAssessmentService.createAssessment(
+                employee.getId(), skill.getId(), 40, 100, "Practical", "Assessor", LocalDate.now());
+
+        skillAssessmentService.verifyAssessment(first.getId(), VerificationStatus.VERIFIED);
+        skillAssessmentService.verifyAssessment(second.getId(), VerificationStatus.VERIFIED);
+        assertEquals(4, employeeSkillMappingRepository.findByEmployee_Id(employee.getId()).getFirst().getProficiency());
+
+        skillAssessmentService.verifyAssessment(second.getId(), VerificationStatus.REJECTED);
+        var fallback = employeeSkillMappingRepository.findByEmployee_Id(employee.getId()).getFirst();
+        assertEquals(10, fallback.getProficiency());
+        assertEquals(VerificationStatus.VERIFIED, fallback.getVerificationStatus());
+
+        skillAssessmentService.verifyAssessment(first.getId(), VerificationStatus.REJECTED);
+        var unverified = employeeSkillMappingRepository.findByEmployee_Id(employee.getId()).getFirst();
+        assertEquals(VerificationStatus.PENDING_VERIFICATION, unverified.getVerificationStatus());
+        assertEquals(0.0, competencyFrameworkService.getEmployeeGapSummary(framework.getId(), employee.getId())
+                .readinessPercentage());
+    }
+
+    @Test
+    void failedAssessmentDoesNotIssueCertificate() {
+        var assessment = skillAssessmentService.createAssessment(
+                employee.getId(), skill.getId(), 69, 100, "Practical", "Authorized assessor", LocalDate.now());
+        skillAssessmentService.verifyAssessment(assessment.getId(), VerificationStatus.VERIFIED);
+        assertEquals(0, issuedCertificateRepository.findByEmployee_Id(employee.getId()).size());
+    }
+
+    @Test
     void certification_statuses_calculateFromDates() {
         var active = certificationService.createCertification(
                 employee.getId(),
@@ -296,6 +394,56 @@ class Milestone1FeatureTests extends IsolatedIntegrationTest {
                         .content(missingEmployeePayload))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Employee not found with id: 99999999"));
+    }
+
+    @Test
+    void employeeAndSkillCatalogCrudRemainsAvailableToHr() throws Exception {
+        String employeeResponse = mockMvc.perform(post("/api/employees")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"CRUD Employee","email":"crud.employee@example.test",
+                                 "jobTitle":"Engineer","department":"Engineering"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("CRUD Employee"))
+                .andReturn().getResponse().getContentAsString();
+        long employeeId = ((Number) JsonPath.read(employeeResponse, "$.id")).longValue();
+
+        mockMvc.perform(put("/api/employees/{id}", employeeId)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Updated CRUD Employee","email":"crud.employee@example.test",
+                                 "jobTitle":"Senior Engineer","department":"Platform"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated CRUD Employee"));
+        mockMvc.perform(get("/api/employees/{id}", employeeId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.department").value("Platform"));
+        mockMvc.perform(delete("/api/employees/{id}", employeeId))
+                .andExpect(status().isNoContent());
+
+        String skillResponse = mockMvc.perform(post("/api/skills")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"CRUD Skill","category":"Technical","description":"Original"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long skillId = ((Number) JsonPath.read(skillResponse, "$.id")).longValue();
+
+        mockMvc.perform(put("/api/skills/{id}", skillId)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Updated CRUD Skill","category":"Technical","description":"Updated"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated CRUD Skill"));
+        mockMvc.perform(get("/api/skills/{id}", skillId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Updated"));
+        mockMvc.perform(delete("/api/skills/{id}", skillId))
+                .andExpect(status().isNoContent());
     }
 
     @Test

@@ -30,14 +30,25 @@ public class AppUser {
     @Column(name = "employee_id", unique = true)
     private Long employeeId;
 
+    @Column(name = "student_id", unique = true)
+    private Long studentId;
+
+    @Column(nullable = false)
+    private boolean enabled = true;
+
     protected AppUser() {
     }
 
     public AppUser(String username, String passwordHash, UserRole role, Long employeeId) {
+        this(username, passwordHash, role, employeeId, null);
+    }
+
+    public AppUser(String username, String passwordHash, UserRole role, Long employeeId, Long studentId) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.role = role;
         this.employeeId = employeeId;
+        this.studentId = studentId;
     }
 
     public Long getId() {
@@ -62,5 +73,17 @@ public class AppUser {
 
     public Long getEmployeeId() {
         return employeeId;
+    }
+
+    public Long getStudentId() {
+        return studentId;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

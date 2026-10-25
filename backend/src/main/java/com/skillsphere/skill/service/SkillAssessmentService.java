@@ -10,11 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.skillsphere.skill.entity.Employee;
 import com.skillsphere.skill.entity.Skill;
 import com.skillsphere.skill.entity.SkillAssessment;
+import com.skillsphere.skill.entity.Student;
 import com.skillsphere.skill.entity.VerificationStatus;
 import com.skillsphere.skill.repository.EmployeeRepository;
 import com.skillsphere.skill.repository.SkillAssessmentRepository;
 import com.skillsphere.skill.repository.SkillRepository;
+import com.skillsphere.skill.repository.StudentRepository;
 import com.skillsphere.skill.service.exception.ResourceNotFoundException;
+import com.skillsphere.skill.service.exception.DuplicateResourceException;
 
 @Service
 @Transactional
@@ -23,14 +26,23 @@ public class SkillAssessmentService {
     private final SkillAssessmentRepository skillAssessmentRepository;
     private final EmployeeRepository employeeRepository;
     private final SkillRepository skillRepository;
+    private final StudentRepository studentRepository;
+    private final IssuedCertificateService issuedCertificateService;
+    private final EmployeeSkillMappingService employeeSkillMappingService;
 
     public SkillAssessmentService(
             SkillAssessmentRepository skillAssessmentRepository,
             EmployeeRepository employeeRepository,
-            SkillRepository skillRepository) {
+            SkillRepository skillRepository,
+            StudentRepository studentRepository,
+            IssuedCertificateService issuedCertificateService,
+            EmployeeSkillMappingService employeeSkillMappingService) {
         this.skillAssessmentRepository = skillAssessmentRepository;
         this.employeeRepository = employeeRepository;
         this.skillRepository = skillRepository;
+        this.studentRepository = studentRepository;
+        this.issuedCertificateService = issuedCertificateService;
+        this.employeeSkillMappingService = employeeSkillMappingService;
     }
 
     public SkillAssessment createAssessment(
@@ -61,6 +73,33 @@ public class SkillAssessmentService {
         return skillAssessmentRepository.save(assessment);
     }
 
+    public SkillAssessment createStudentAssessment(
+            Long studentId,
+            Long skillId,
+            Integer score,
+            Integer maxScore,
+            String assessmentMethod,
+            String assessorName,
+            LocalDate assessmentDate) {
+        validateAssessment(score, maxScore, assessmentMethod, assessmentDate);
+        if (studentId == null || studentId <= 0 || skillId == null || skillId <= 0) {
+            throw new IllegalArgumentException("Student and skill ids must be positive values");
+        }
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new ResourceNotFoundException("Skill not found with id: " + skillId));
+        SkillAssessment assessment = new SkillAssessment();
+        assessment.setStudent(student);
+        assessment.setSkill(skill);
+        assessment.setScore(score);
+        assessment.setMaxScore(maxScore);
+        assessment.setAssessmentMethod(assessmentMethod);
+        assessment.setAssessorName(assessorName);
+        assessment.setAssessmentDate(assessmentDate);
+        return skillAssessmentRepository.save(assessment);
+    }
+
     public List<SkillAssessment> getAllAssessments() {
         return skillAssessmentRepository.findAll();
     }
@@ -77,6 +116,15 @@ public class SkillAssessmentService {
         employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
         return skillAssessmentRepository.findByEmployee_Id(employeeId);
+    }
+
+    public List<SkillAssessment> getAssessmentsByStudent(Long studentId) {
+        if (studentId == null || studentId <= 0) {
+            throw new IllegalArgumentException("Student id must be a positive value");
+        }
+        studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        return skillAssessmentRepository.findByStudent_Id(studentId);
     }
 
     public List<SkillAssessment> getAssessmentsBySkill(Long skillId) {
@@ -119,6 +167,9 @@ public class SkillAssessmentService {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Assessment id must be a positive value");
         }
+        if (issuedCertificateService.hasCertificateForAssessment(id)) {
+            throw new DuplicateResourceException("An assessment linked to an issued certificate cannot be edited");
+        }
         SkillAssessment existing = getAssessmentById(id);
 
         if (employeeId != null && !employeeId.equals(existing.getEmployeeId())) {
@@ -157,6 +208,10 @@ public class SkillAssessmentService {
     }
 
     public SkillAssessment verifyAssessment(Long id, VerificationStatus verificationStatus) {
+        return verifyAssessment(id, verificationStatus, "system");
+    }
+
+    public SkillAssessment verifyAssessment(Long id, VerificationStatus verificationStatus, String actor) {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Assessment id must be a positive value");
         }
@@ -164,13 +219,27 @@ public class SkillAssessmentService {
             throw new IllegalArgumentException("Verification action must set VERIFIED or REJECTED");
         }
 
-        SkillAssessment assessment = getAssessmentById(id);
+        SkillAssessment assessment = skillAssessmentRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Assessment not found with id: " + id));
         assessment.setVerificationStatus(verificationStatus);
-        return skillAssessmentRepository.save(assessment);
+        SkillAssessment saved = skillAssessmentRepository.save(assessment);
+        if (verificationStatus == VerificationStatus.VERIFIED) {
+            employeeSkillMappingService.recordVerifiedAssessment(saved);
+            issuedCertificateService.issueIfEligible(saved);
+        } else if (verificationStatus == VerificationStatus.REJECTED) {
+            employeeSkillMappingService.removeVerifiedAssessment(saved);
+            issuedCertificateService.revokeForAssessment(
+                    id, actor, "Assessment verification was changed to REJECTED");
+        }
+        return saved;
     }
 
     public void deleteAssessment(Long id) {
+        if (issuedCertificateService.hasCertificateForAssessment(id)) {
+            throw new DuplicateResourceException("An assessment linked to an issued certificate cannot be deleted");
+        }
         SkillAssessment assessment = getAssessmentById(id);
+        employeeSkillMappingService.removeVerifiedAssessment(assessment);
         skillAssessmentRepository.delete(assessment);
     }
 

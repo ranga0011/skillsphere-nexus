@@ -1,0 +1,53 @@
+.admin-learning {
+  min-height: 100vh;
+  padding: 2rem;
+  background: #f4f7fb;
+  color: #172b4d;
+}
+
+.page-heading, .panel-heading, .list-card, .pagination, .tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-heading { margin-bottom: 1.5rem; }
+.page-heading h1 { margin: 0; }
+.eyebrow { color: #3b6ea5; font-size: .75rem; font-weight: 700; letter-spacing: .08em; }
+.tabs { justify-content: flex-start; margin-bottom: 1rem; flex-wrap: wrap; }
+.tabs button, .secondary-btn, .primary-btn {
+  border: 0;
+  border-radius: .5rem;
+  padding: .65rem 1rem;
+  cursor: pointer;
+}
+.tabs button { background: #e2eaf4; color: #23476e; }
+.tabs button.active, .primary-btn { background: #275b91; color: white; }
+.secondary-btn { background: #e9eff6; color: #23476e; }
+.panel { margin: 1rem 0; padding: 1.5rem; border-radius: .8rem; background: white; box-shadow: 0 3px 16px #193b5c12; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+label { display: grid; gap: .4rem; margin: .5rem 0; font-weight: 600; }
+input, select, textarea { width: 100%; border: 1px solid #cbd6e2; border-radius: .4rem; padding: .65rem; font: inherit; }
+textarea { min-height: 5rem; }
+.question-maker { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5ebf2; }
+.list-card { padding: 1rem 0; border-bottom: 1px solid #e5ebf2; }
+.list-card div { display: grid; gap: .35rem; }
+.list-card span, .list-card small { color: #58708c; }
+.status-actions { display: flex; align-items: center; gap: .5rem; }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.summary-grid article { display: grid; gap: .25rem; padding: 1rem; background: #f0f5fa; border-radius: .6rem; }
+.summary-grid strong { font-size: 1.3rem; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .7rem; border-bottom: 1px solid #e5ebf2; text-align: left; }
+.pagination { justify-content: center; margin: 1rem 0; }
+.success-message { color: #187044; }
+.error-message { color: #a32929; }
+.status-pill { padding: .3rem .6rem; border-radius: 1rem; }
+.status-pill.success { color: #187044; background: #e4f5ec; }
+.status-pill.warning { color: #865d00; background: #fff4d1; }
+@media (max-width: 680px) {
+  .admin-learning { padding: 1rem; }
+  .page-heading { align-items: flex-start; flex-direction: column; }
+}

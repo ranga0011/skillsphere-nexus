@@ -49,7 +49,13 @@ export class LoginComponent {
     this.auth.login(this.username, this.password).subscribe({
       next: () => {
         this.loading = false;
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl(
+          this.auth.currentUser?.role === 'HR_ADMIN'
+            ? '/hr'
+            : this.auth.currentUser?.role === 'STUDENT'
+              ? '/student'
+              : '/employee'
+        );
       },
       error: (error: unknown) => {
         this.loading = false;

@@ -1,0 +1,299 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #17243a;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.student-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px;
+  background: #f5f7fb;
+}
+
+.student-header,
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+
+.student-header {
+  margin-bottom: 22px;
+}
+
+.student-header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.student-header p {
+  color: #64748b;
+}
+
+.eyebrow {
+  color: #285ca8 !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.panel {
+  margin-bottom: 20px;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #e1e7f0;
+  border-radius: 12px;
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+.panel p {
+  color: #64748b;
+}
+
+.form-grid,
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #3d4f68;
+  font-size: 14px;
+}
+
+input,
+select {
+  min-height: 42px;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #17243a;
+  font: inherit;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.inline-form label {
+  min-width: 220px;
+}
+
+.primary-btn,
+.secondary-btn {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 7px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-btn {
+  background: #285ca8;
+  color: white;
+}
+
+.secondary-btn {
+  background: #e8eef8;
+  color: #203e68;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.framework-select {
+  max-width: 520px;
+}
+
+.readiness {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.readiness strong {
+  color: #285ca8;
+  font-size: 32px;
+}
+
+.summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.summary-grid article {
+  padding: 14px;
+  background: #f2f5fa;
+  border-radius: 8px;
+}
+
+.summary-grid strong,
+.summary-grid span {
+  display: block;
+}
+
+.summary-grid strong {
+  font-size: 22px;
+}
+
+.summary-grid span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.formula {
+  font-size: 13px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid #e5eaf2;
+}
+
+th {
+  background: #f2f5fa;
+  color: #42536b;
+  font-size: 12px;
+}
+
+td {
+  font-size: 14px;
+}
+
+td small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message,
+.success-message {
+  padding: 12px;
+  border-radius: 7px;
+}
+
+.error-message {
+  background: #fff0f0;
+  color: #a61b1b;
+}
+
+.success-message {
+  background: #e3f7ed;
+  color: #11643f;
+}
+
+.assessment-card,
+.resource-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5eaf2;
+}
+
+.assessment-card h3 {
+  margin: 0;
+}
+
+.attempt-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f2f5fa;
+}
+
+.attempt-panel fieldset {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+}
+
+.attempt-panel legend {
+  font-weight: 600;
+}
+
+.answer-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 9px 0;
+}
+
+.answer-option input {
+  min-height: auto;
+}
+
+.resource-card p {
+  margin: 5px 0;
+}
+
+@media (max-width: 700px) {
+  .student-shell {
+    padding: 16px;
+  }
+
+  .student-header,
+  .panel-heading,
+  .assessment-card,
+  .resource-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .form-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  table {
+    min-width: 650px;
+  }
+}

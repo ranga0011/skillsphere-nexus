@@ -4,14 +4,30 @@ import { Observable, tap } from 'rxjs';
 
 export interface AuthUser {
   username: string;
-  role: 'HR_ADMIN' | 'EMPLOYEE';
+  role: 'HR_ADMIN' | 'EMPLOYEE' | 'STUDENT';
   employeeId: number | null;
+  studentId: number | null;
 }
 
 interface LoginResponse extends AuthUser {
   accessToken: string;
   tokenType: string;
   expiresIn: number;
+}
+
+export interface CreateStudentAccountRequest {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  program: string;
+}
+
+export interface AccountCreatedResponse {
+  username: string;
+  role: string;
+  employeeId: number | null;
+  studentId: number | null;
 }
 
 interface AuthSession {
@@ -58,12 +74,17 @@ export class AuthService {
         user: {
           username: response.username,
           role: response.role,
-          employeeId: response.employeeId
+          employeeId: response.employeeId,
+          studentId: response.studentId
         },
         token: response.accessToken,
         expiresAt: Date.now() + response.expiresIn * 1000
       }))
     );
+  }
+
+  createStudentAccount(payload: CreateStudentAccountRequest): Observable<AccountCreatedResponse> {
+    return this.http.post<AccountCreatedResponse>(`${this.apiUrl}/students`, payload);
   }
 
   logout(): void {

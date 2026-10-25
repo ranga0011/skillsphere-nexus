@@ -3,7 +3,9 @@ package com.skillsphere.skill.entity;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -25,7 +28,14 @@ import jakarta.validation.constraints.PastOrPresent;
 @Entity
 @Table(
     name = "employee_skill_mappings",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "skill_id"})
+    check = @CheckConstraint(
+        name = "ck_employee_skill_mapping_owner",
+        constraint = "(employee_id IS NOT NULL AND student_id IS NULL) OR (employee_id IS NULL AND student_id IS NOT NULL)"
+    ),
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"employee_id", "skill_id"}),
+        @UniqueConstraint(columnNames = {"student_id", "skill_id"})
+    }
 )
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class EmployeeSkillMapping {
@@ -34,10 +44,18 @@ public class EmployeeSkillMapping {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_id", nullable = false)
-    @NotNull(message = "Employee is required")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
     private Employee employee;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
+    private Student student;
+
+    @JsonIgnore
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_assessment_id", unique = true)
+    private SkillAssessment verifiedAssessment;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "skill_id", nullable = false)
@@ -61,6 +79,9 @@ public class EmployeeSkillMapping {
     private Long employeeId;
 
     @Transient
+    private Long studentId;
+
+    @Transient
     private Long skillId;
 
     public EmployeeSkillMapping() {
@@ -76,8 +97,37 @@ public class EmployeeSkillMapping {
 
     public void setEmployee(Employee employee) {
         this.employee = employee;
+        if (employee == null) {
+            this.employeeId = null;
+        }
         if (employee != null) {
             this.employeeId = employee.getId();
+            this.student = null;
+            this.studentId = null;
+        }
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public SkillAssessment getVerifiedAssessment() {
+        return verifiedAssessment;
+    }
+
+    public void setVerifiedAssessment(SkillAssessment verifiedAssessment) {
+        this.verifiedAssessment = verifiedAssessment;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+        if (student == null) {
+            this.studentId = null;
+        }
+        if (student != null) {
+            this.studentId = student.getId();
+            this.employee = null;
+            this.employeeId = null;
         }
     }
 
@@ -125,6 +175,17 @@ public class EmployeeSkillMapping {
 
     public void setEmployeeId(Long employeeId) {
         this.employeeId = employeeId;
+    }
+
+    public Long getStudentId() {
+        if (studentId != null) {
+            return studentId;
+        }
+        return student != null ? student.getId() : null;
+    }
+
+    public void setStudentId(Long studentId) {
+        this.studentId = studentId;
     }
 
     public Long getSkillId() {

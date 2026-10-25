@@ -3,6 +3,8 @@ package com.skillsphere.skill;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -156,6 +158,124 @@ class SecurityIntegrationTests extends IsolatedIntegrationTest {
             }
 
     @Test
+    void studentProvisioningUsesSeparateProfilesAndEnforcesOwnership() throws Exception {
+        String firstStudentBody = """
+                {"username":"learner.one@example.com","password":"Unique-Student-Password-2026",
+                 "name":"Learner One","email":"learner.one@example.com","program":"Data Science",
+                 "role":"HR_ADMIN"}
+                """;
+        String firstResponse = mockMvc.perform(post("/api/auth/students")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(firstStudentBody))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.employeeId").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        long firstStudentId = responseId(firstResponse, "studentId");
+        String studentToken = login("learner.one@example.com", "Unique-Student-Password-2026");
+
+        mockMvc.perform(get("/api/students/me").header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Learner One"))
+                .andExpect(jsonPath("$.program").value("Data Science"));
+
+        String secondStudentBody = """
+                {"username":"learner.two@example.com","password":"Unique-Student-Password-2026",
+                 "name":"Learner Two","email":"learner.two@example.com","program":"Cybersecurity"}
+                """;
+        String secondResponse = mockMvc.perform(post("/api/auth/students")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(secondStudentBody))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long secondStudentId = responseId(secondResponse, "studentId");
+
+        mockMvc.perform(get("/api/students/{id}", secondStudentId)
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/employees/{id}", employee.getId())
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/students/{id}", firstStudentId)
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("learner.one@example.com"));
+
+        Skill studentSkill = skillRepository.save(new Skill("Student APIs", "Technical", "HTTP services"));
+        mockMvc.perform(post("/api/students/me/skills")
+                        .header("Authorization", bearer(studentToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"skillId":%d,"proficiency":9,"verificationStatus":"VERIFIED"}
+                                """.formatted(studentSkill.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.verificationStatus").value("PENDING_VERIFICATION"));
+        mockMvc.perform(get("/api/certificates").header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        String assessmentResponse = mockMvc.perform(post("/api/assessments")
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"studentId":%d,"skillId":%d,"score":90,"maxScore":100,
+                                 "assessmentMethod":"Practical","assessorName":"Admin assessor",
+                                 "assessmentDate":"%s","verificationStatus":"VERIFIED"}
+                                """.formatted(firstStudentId, studentSkill.getId(), LocalDate.now())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.verificationStatus").value("PENDING_VERIFICATION"))
+                .andReturn().getResponse().getContentAsString();
+        long assessmentId = responseId(assessmentResponse, "id");
+        mockMvc.perform(put("/api/assessments/{id}/verification", assessmentId)
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"verificationStatus\":\"VERIFIED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.verificationStatus").value("VERIFIED"));
+        mockMvc.perform(get("/api/students/me/skills")
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].proficiency").value(9))
+                .andExpect(jsonPath("$[0].verificationStatus").value("VERIFIED"));
+
+        String certificates = mockMvc.perform(get("/api/certificates")
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].learnerName").value("Learner One"))
+                .andReturn().getResponse().getContentAsString();
+        long certificateId = responseId(certificates, "id");
+        String verificationToken = responseString(certificates, "verificationToken");
+
+        mockMvc.perform(get("/api/certificates/{id}/download", certificateId)
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_PDF));
+        mockMvc.perform(get("/api/certificates/{id}/download", certificateId)
+                        .header("Authorization", bearer(login("learner.two@example.com", "Unique-Student-Password-2026"))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/certificates/verify/{token}", verificationToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ISSUED"))
+                .andExpect(jsonPath("$.learnerName").doesNotExist())
+                .andExpect(jsonPath("$.email").doesNotExist());
+
+        mockMvc.perform(put("/api/certificates/{id}/revoke", certificateId)
+                        .header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"Assessment evidence was invalidated\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REVOKED"));
+        mockMvc.perform(get("/api/certificates/verify/{token}", verificationToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REVOKED"));
+        mockMvc.perform(get("/api/certificates/{id}/download", certificateId)
+                        .header("Authorization", bearer(studentToken)))
+                .andExpect(status().isGone());
+    }
+
+    @Test
     void invalidCredentialsAreRejected() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -208,6 +328,26 @@ class SecurityIntegrationTests extends IsolatedIntegrationTest {
             throw new IllegalStateException("Login response did not contain an access token");
         }
         return tokenMatcher.group(1);
+    }
+
+    private long responseId(String response, String field) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("\\\"" + field + "\\\":(\\d+)")
+                .matcher(response);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Response did not contain " + field);
+        }
+        return Long.parseLong(matcher.group(1));
+    }
+
+    private String responseString(String response, String field) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("\\\"" + field + "\\\":\\\"([^\\\"]+)\\\"")
+                .matcher(response);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Response did not contain " + field);
+        }
+        return matcher.group(1);
     }
 
     private String bearer(String token) {

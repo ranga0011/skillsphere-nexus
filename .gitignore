@@ -1,4 +1,4 @@
-﻿# Java / Spring Boot
+# Java / Spring Boot
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar
 
@@ -19,6 +19,9 @@ frontend/.angular/
 *.log
 *.tmp
 *.swp
+backend-error.txt
+startup-debug.txt
+*.txt.bak
 
 # IDE and operating system files
 .vscode/
