@@ -183,6 +183,14 @@ export class WorkspaceComponent implements OnInit {
     return this.authService.isHrAdmin;
   }
 
+  get isEmployee(): boolean {
+    return this.authService.isEmployee;
+  }
+
+  get isStudent(): boolean {
+    return this.authService.isStudent;
+  }
+
   logout(): void {
     this.authService.logout();
     void this.router.navigateByUrl('/login');
@@ -194,6 +202,10 @@ export class WorkspaceComponent implements OnInit {
 
   goToAdminLearning(): void {
     void this.router.navigateByUrl('/hr/learning');
+  }
+
+  goToStudentPortal(): void {
+    void this.router.navigateByUrl('/student');
   }
 
   private loadCurrentEmployeeData(): void {

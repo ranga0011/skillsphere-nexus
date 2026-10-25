@@ -60,6 +60,14 @@ export class AuthService {
     return this.currentUser?.role === 'HR_ADMIN';
   }
 
+  get isEmployee(): boolean {
+    return this.currentUser?.role === 'EMPLOYEE';
+  }
+
+  get isStudent(): boolean {
+    return this.currentUser?.role === 'STUDENT';
+  }
+
   get authorizationMessage(): string {
     return this.authorizationError();
   }

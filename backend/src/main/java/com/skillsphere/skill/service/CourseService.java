@@ -69,6 +69,30 @@ public class CourseService {
         return enrollmentRepository.findByStudentId(studentId);
     }
 
+    public List<CourseEnrollment> getAdminEnrollments() {
+        return enrollmentRepository.findAll();
+    }
+
+    @Transactional
+    public CourseEnrollment enrollAdmin(Long courseId) {
+        Course course = getCourseById(courseId);
+        return enrollmentRepository.findAll().stream()
+                .filter(e -> e.getCourse() != null && e.getCourse().getId().equals(courseId) && e.getEmployee() == null && e.getStudent() == null)
+                .findFirst()
+                .orElseGet(() -> {
+                    CourseEnrollment enrollment = new CourseEnrollment();
+                    enrollment.setCourse(course);
+                    enrollment.setStatus("ENROLLED");
+                    enrollment.setProgressPercentage(0);
+                    enrollment.setEnrolledAt(LocalDate.now());
+
+                    course.setTotalEnrolled(course.getTotalEnrolled() + 1);
+                    courseRepository.save(course);
+
+                    return enrollmentRepository.save(enrollment);
+                });
+    }
+
     @Transactional
     public CourseEnrollment enrollEmployee(Long courseId, Long employeeId) {
         Course course = getCourseById(courseId);

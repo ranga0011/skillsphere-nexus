@@ -60,6 +60,9 @@ public class CourseController {
         if (authorizationService.isStudent()) {
             return courseService.getEnrollmentsByStudent(authorizationService.getCurrentStudentId());
         }
+        if (authorizationService.isHrAdmin()) {
+            return courseService.getAdminEnrollments();
+        }
         return List.of();
     }
 
@@ -72,7 +75,10 @@ public class CourseController {
         if (authorizationService.isStudent()) {
             return courseService.enrollStudent(courseId, authorizationService.getCurrentStudentId());
         }
-        throw new org.springframework.security.access.AccessDeniedException("Must be an employee or student to enroll");
+        if (authorizationService.isHrAdmin()) {
+            return courseService.enrollAdmin(courseId);
+        }
+        throw new org.springframework.security.access.AccessDeniedException("Must be an employee, student, or admin to enroll");
     }
 
     @PutMapping("/enrollments/{enrollmentId}/progress")

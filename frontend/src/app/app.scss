@@ -29,7 +29,7 @@
 .sidebar h2 {
   font-size: 22px;
   line-height: 1.4;
-  margin: 0 0 40px;
+  margin: 0 0 16px;
   color: #ffffff;
 }
 
@@ -37,13 +37,68 @@
   color: #8ab4ff;
 }
 
+.sidebar-brand {
+  margin-bottom: 24px;
+}
+
+.role-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.admin-pill {
+  background: rgba(138, 180, 255, 0.2);
+  color: #8ab4ff;
+  border: 1px solid rgba(138, 180, 255, 0.4);
+}
+
+.employee-pill {
+  background: rgba(52, 211, 153, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.portal-switch-btn {
+  background: rgba(99, 102, 241, 0.15) !important;
+  border: 1px dashed rgba(165, 180, 252, 0.4) !important;
+  color: #c7d2fe !important;
+}
+
+.portal-switch-btn:hover {
+  background: rgba(99, 102, 241, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.user-role {
+  color: #8ab4ff;
+  font-size: 11px;
+}
+
 .nav-label {
   color: #c0ccdc;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 1.3px;
   padding-left: 12px;
-  margin-bottom: 14px;
+  margin: 18px 0 8px;
+  text-transform: uppercase;
 }
 
 /* Navigation buttons: explicitly reset browser defaults */
