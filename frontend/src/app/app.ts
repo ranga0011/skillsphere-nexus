@@ -143,6 +143,22 @@ export class WorkspaceComponent implements OnInit {
   newJob: InternalJob = { title: '', department: 'Engineering', description: '', requiredSkills: '', openingsCount: 1, status: 'OPEN' };
   showJobForm = false;
 
+  // Notification & Expiry Alert State
+  showNotifications = false;
+  unreadNotificationCount = 2;
+
+  toggleNotificationPopover(): void {
+    this.showNotifications = !this.showNotifications;
+  }
+
+  markAllNotificationsRead(): void {
+    this.unreadNotificationCount = 0;
+  }
+
+  get hasExpiringCerts(): boolean {
+    return this.complianceSummary ? this.complianceSummary.expiringIn30Days > 0 : true;
+  }
+
   constructor(
     private http: HttpClient,
     private skillService: SkillService,

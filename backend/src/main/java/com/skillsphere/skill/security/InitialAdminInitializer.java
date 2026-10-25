@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("local")
 public class InitialAdminInitializer implements ApplicationRunner {
     private static final Logger logger = LoggerFactory.getLogger(InitialAdminInitializer.class);
 

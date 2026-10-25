@@ -36,6 +36,57 @@
   </aside>
 
   <main class="main-content">
+    <!-- Top Global Bar with Live System Status and Notification Center -->
+    <div class="global-navbar">
+      <div class="global-status-indicator">
+        <span class="live-dot"></span>
+        <span class="live-text">Nexus Cloud Node &middot; Live & Healthy</span>
+      </div>
+      <div class="global-nav-tools">
+        <!-- Notification Center -->
+        <div class="notification-container">
+          <button class="bell-btn" type="button" (click)="toggleNotificationPopover()" aria-label="Notifications">
+            🔔
+            <span class="bell-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
+          </button>
+
+          <!-- Notification Dropdown Popover -->
+          <div class="notification-dropdown" *ngIf="showNotifications">
+            <div class="notif-header">
+              <span class="notif-title">Compliance & Learning Alerts</span>
+              <button class="notif-read-btn" type="button" (click)="markAllNotificationsRead()">Mark read</button>
+            </div>
+            <div class="notif-list">
+              <div class="notif-item alert-warning" *ngIf="hasExpiringCerts">
+                <div class="notif-icon">⚠️</div>
+                <div class="notif-info">
+                  <p class="notif-lead">Certification Expiry Notice</p>
+                  <p class="notif-desc">CKA: Certified Kubernetes Administrator expires in 18 days. Urgent renewal required to maintain team compliance.</p>
+                  <span class="notif-tag">Notification: Sent &middot; Milestone 3 Expiry Tracking</span>
+                </div>
+              </div>
+              <div class="notif-item alert-info" *ngIf="isHrAdmin">
+                <div class="notif-icon">📋</div>
+                <div class="notif-info">
+                  <p class="notif-lead">Audit Queue Pending</p>
+                  <p class="notif-desc">Self-reported skill assessments and employee certifications awaiting HR administrative verification.</p>
+                  <span class="notif-tag">Action: Review Required</span>
+                </div>
+              </div>
+              <div class="notif-item alert-success">
+                <div class="notif-icon">✓</div>
+                <div class="notif-info">
+                  <p class="notif-lead">LMS Learning Sync</p>
+                  <p class="notif-desc">Course progress and competency frameworks synchronised with enterprise catalog.</p>
+                  <span class="notif-tag">Status: Validated</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <p class="error-message" role="alert" *ngIf="authService.authorizationMessage">{{ authService.authorizationMessage }}</p>
 
     <!-- Visual Analytics Dashboard -->

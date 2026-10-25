@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: skillsphere-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: skillsphere_db
+      POSTGRES_USER: skillsphere
+      POSTGRES_PASSWORD: skillsphere_secret
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillsphere -d skillsphere_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: skillsphere-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/skillsphere_db
+      DB_USERNAME: skillsphere
+      DB_PASSWORD: skillsphere_secret
+      JWT_SECRET: c2tpbGxzcGhlcmUtbmV4dXMtZW50ZXJwcmlzZS1qd3Qtc2VjcmV0LWtleS0yMDI2LXN1cGVyLXNlY3VyZQ==
+      INITIAL_ADMIN_USERNAME: admin@skillsphere.com
+      INITIAL_ADMIN_PASSWORD: admin123456789
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: skillsphere-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+
+volumes:
+  postgres_data:
