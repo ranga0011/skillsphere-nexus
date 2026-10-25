@@ -12,6 +12,8 @@ import { FrameworkService } from './framework.service';
 import { CertificationService } from './certification.service';
 import { AuthService } from './auth.service';
 import { IssuedCertificateService } from './issued-certificate.service';
+import { CourseService } from './course.service';
+import { CareerService } from './career.service';
 import {
   Assessment,
   Certification,
@@ -19,7 +21,13 @@ import {
   CompetencyGap,
   EmployeeSkillAssignment,
   FrameworkSkillRequirement,
-  IssuedCertificate
+  IssuedCertificate,
+  Course,
+  CourseEnrollment,
+  LearningPath,
+  CareerPlan,
+  InternalJob,
+  JobApplication
 } from './feature-models';
 
 interface Employee {
@@ -45,7 +53,10 @@ export class WorkspaceComponent implements OnInit {
     | 'mappings'
     | 'assessments'
     | 'frameworks'
-    | 'certifications' = 'dashboard';
+    | 'certifications'
+    | 'courses'
+    | 'career' = 'dashboard';
+
 
   employees: Employee[] = [];
   loading = false;
@@ -107,6 +118,31 @@ export class WorkspaceComponent implements OnInit {
   editingCertificationId: number | null = null;
   certification: Certification = this.emptyCertification();
 
+  // Milestone 2 LMS State
+  courses: Course[] = [];
+  learningPaths: LearningPath[] = [];
+  myEnrollments: CourseEnrollment[] = [];
+  courseLoading = false;
+  courseError = '';
+  courseSuccess = '';
+  newCourse: Course = { title: '', description: '', durationHours: 40, instructor: '', courseType: 'ONLINE', rating: 4.8, totalEnrolled: 0, totalCompleted: 0, category: 'Technical' };
+  showCourseForm = false;
+
+  // Milestone 3 Compliance Summary State
+  complianceSummary: any = null;
+  expiringCertFilter = false;
+
+  // Milestone 4 Career & Jobs State
+  careerPlan: CareerPlan | null = null;
+  internalJobs: InternalJob[] = [];
+  myApplications: JobApplication[] = [];
+  careerLoading = false;
+  careerError = '';
+  careerSuccess = '';
+  showCareerForm = false;
+  newJob: InternalJob = { title: '', department: 'Engineering', description: '', requiredSkills: '', openingsCount: 1, status: 'OPEN' };
+  showJobForm = false;
+
   constructor(
     private http: HttpClient,
     private skillService: SkillService,
@@ -115,11 +151,18 @@ export class WorkspaceComponent implements OnInit {
     private frameworkService: FrameworkService,
     private certificationService: CertificationService,
     private issuedCertificateService: IssuedCertificateService,
+    public courseService: CourseService,
+    public careerService: CareerService,
     @Inject(AuthService) public authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.loadCourses();
+    this.loadLearningPaths();
+    this.loadComplianceSummary();
+    this.loadInternalJobs();
+
     if (this.authService.isHrAdmin) {
       this.loadEmployees();
       this.loadSkills();
@@ -131,6 +174,9 @@ export class WorkspaceComponent implements OnInit {
     }
     this.loadSkills();
     this.loadCurrentEmployeeData();
+    this.loadMyEnrollments();
+    this.loadMyCareerPlan();
+    this.loadMyApplications();
   }
 
   get isHrAdmin(): boolean {
@@ -970,4 +1016,307 @@ export class WorkspaceComponent implements OnInit {
         return 'status-pill neutral';
     }
   }
+
+  // --- Milestone 2: Course & Learning Management ---
+  loadCourses(): void {
+    this.courseLoading = true;
+    this.courseService.getAllCourses().subscribe({
+      next: (data) => {
+        this.courses = Array.isArray(data) ? data : [];
+        this.courseLoading = false;
+      },
+      error: () => {
+        this.courseLoading = false;
+      }
+    });
+  }
+
+  saveCourse(): void {
+    if (!this.newCourse.title) return;
+    this.courseService.createCourse(this.newCourse).subscribe({
+      next: (created) => {
+        this.courses.unshift(created);
+        this.showCourseForm = false;
+        this.courseSuccess = 'Course added successfully!';
+        setTimeout(() => this.courseSuccess = '', 3500);
+      },
+      error: () => this.courseError = 'Failed to create course.'
+    });
+  }
+
+  loadLearningPaths(): void {
+    this.courseService.getAllLearningPaths().subscribe({
+      next: (data) => this.learningPaths = Array.isArray(data) ? data : []
+    });
+  }
+
+  loadMyEnrollments(): void {
+    this.courseService.getMyEnrollments().subscribe({
+      next: (data) => this.myEnrollments = Array.isArray(data) ? data : []
+    });
+  }
+
+  isEnrolled(courseId: number | undefined): boolean {
+    if (!courseId) return false;
+    return this.myEnrollments.some(e => e.course?.id === courseId);
+  }
+
+  getEnrollment(courseId: number | undefined): CourseEnrollment | undefined {
+    if (!courseId) return undefined;
+    return this.myEnrollments.find(e => e.course?.id === courseId);
+  }
+
+  enrollInCourse(courseId: number | undefined): void {
+    if (!courseId) return;
+    this.courseService.enroll(courseId).subscribe({
+      next: (enrollment) => {
+        this.myEnrollments.push(enrollment);
+        this.courseSuccess = 'Enrolled in course successfully!';
+        setTimeout(() => this.courseSuccess = '', 3500);
+      },
+      error: () => this.courseError = 'Enrollment failed.'
+    });
+  }
+
+  updateEnrollmentProgress(enrollmentId: number | undefined, progress: number): void {
+    if (!enrollmentId) return;
+    this.courseService.updateProgress(enrollmentId, progress).subscribe({
+      next: (updated) => {
+        const idx = this.myEnrollments.findIndex(e => e.id === updated.id);
+        if (idx !== -1) this.myEnrollments[idx] = updated;
+      }
+    });
+  }
+
+  // --- Milestone 3: Expiry Tracking & Renewal ---
+  loadComplianceSummary(): void {
+    this.certificationService.getComplianceMetrics().subscribe({
+      next: (data) => this.complianceSummary = data,
+      error: () => {}
+    });
+  }
+
+  renewCertificationRecord(id: number | undefined): void {
+    if (!id) return;
+    this.certificationService.renewCertification(id).subscribe({
+      next: (updated) => {
+        const idx = this.certifications.findIndex(c => c.id === updated.id);
+        if (idx !== -1) this.certifications[idx] = updated;
+        this.certificationSuccess = 'Certification renewed successfully! Valid for next 2 years.';
+        this.loadComplianceSummary();
+        setTimeout(() => this.certificationSuccess = '', 4000);
+      },
+      error: () => this.certificationError = 'Failed to renew certification.'
+    });
+  }
+
+  // --- Milestone 4: Career Planning & Job Portal ---
+  loadMyCareerPlan(): void {
+    this.careerService.getMyCareerPlan().subscribe({
+      next: (plan) => {
+        this.careerPlan = plan || {
+          currentRole: this.employees[0]?.jobTitle || 'Developer',
+          targetRole: 'Tech Lead',
+          progressPercentage: 67,
+          skillGaps: 'Angular +3, Leadership +2',
+          mentorName: 'Jane Doe',
+          promotionReadinessScore: 80,
+          promotionEligibility: 'Eligible in 3 months',
+          status: 'ACTIVE'
+        };
+      }
+    });
+  }
+
+  saveCareerPlan(): void {
+    if (!this.careerPlan) return;
+    this.careerService.saveMyCareerPlan(this.careerPlan).subscribe({
+      next: (saved) => {
+        this.careerPlan = saved;
+        this.showCareerForm = false;
+        this.careerSuccess = 'Career plan updated successfully!';
+        setTimeout(() => this.careerSuccess = '', 3500);
+      },
+      error: () => this.careerError = 'Could not save career plan.'
+    });
+  }
+
+  loadInternalJobs(): void {
+    this.careerService.getAllJobs().subscribe({
+      next: (data) => this.internalJobs = Array.isArray(data) ? data : []
+    });
+  }
+
+  saveJob(): void {
+    if (!this.newJob.title || !this.newJob.requiredSkills) return;
+    this.careerService.createJob(this.newJob).subscribe({
+      next: (created) => {
+        this.internalJobs.unshift(created);
+        this.showJobForm = false;
+        this.careerSuccess = 'Job opening posted successfully!';
+        setTimeout(() => this.careerSuccess = '', 3500);
+      },
+      error: () => this.careerError = 'Failed to post job opening.'
+    });
+  }
+
+  loadMyApplications(): void {
+    this.careerService.getMyApplications().subscribe({
+      next: (data) => this.myApplications = Array.isArray(data) ? data : []
+    });
+  }
+
+  hasApplied(jobId: number | undefined): boolean {
+    if (!jobId) return false;
+    return this.myApplications.some(a => a.job?.id === jobId);
+  }
+
+  applyForJob(jobId: number | undefined): void {
+    if (!jobId) return;
+    this.careerService.applyForJob(jobId).subscribe({
+      next: (app) => {
+        this.myApplications.push(app);
+        this.careerSuccess = 'Application submitted successfully!';
+        setTimeout(() => this.careerSuccess = '', 3500);
+      },
+      error: () => this.careerError = 'Application failed.'
+    });
+  }
+
+  // --- Visual Chart Getters for Dashboard ---
+  get skillCategoryDonut(): { label: string; count: number; percent: number; color: string; dasharray: string; dashoffset: number }[] {
+    const counts: Record<string, number> = { Technical: 0, 'Soft Skill': 0, Domain: 0 };
+    for (const s of this.skills) {
+      const cat = (s.category || '').toLowerCase();
+      if (cat.includes('soft')) counts['Soft Skill']++;
+      else if (cat.includes('domain')) counts['Domain']++;
+      else counts['Technical']++;
+    }
+    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+    const colors: Record<string, string> = { Technical: '#3b82f6', 'Soft Skill': '#10b981', Domain: '#f59e0b' };
+    const circumference = 376.99; // 2 * PI * 60
+    let cumulative = 0;
+
+    return Object.entries(counts).map(([label, count]) => {
+      const fraction = count / total;
+      const strokeLen = fraction * circumference;
+      const emptyLen = circumference - strokeLen;
+      const res = {
+        label,
+        count,
+        percent: Math.round(fraction * 100),
+        color: colors[label],
+        dasharray: `${strokeLen.toFixed(1)} ${emptyLen.toFixed(1)}`,
+        dashoffset: -cumulative
+      };
+      cumulative += strokeLen;
+      return res;
+    });
+  }
+
+  get certStatusDonut(): { label: string; count: number; percent: number; color: string; dasharray: string; dashoffset: number }[] {
+    let valid = 0, expiring = 0, expired = 0;
+    const now = new Date();
+    const in30Days = new Date();
+    in30Days.setDate(in30Days.getDate() + 30);
+
+    for (const c of this.certifications) {
+      if (c.expiryDate) {
+        const exp = new Date(c.expiryDate);
+        if (exp < now) expired++;
+        else if (exp <= in30Days) expiring++;
+        else valid++;
+      } else {
+        valid++;
+      }
+    }
+    if (this.complianceSummary) {
+      valid = this.complianceSummary.activeCount || valid;
+      expiring = this.complianceSummary.expiringWithin30Days || expiring;
+      expired = this.complianceSummary.expiredCount || expired;
+    }
+    const total = (valid + expiring + expired) || 1;
+    const items = [
+      { label: 'Active Valid', count: valid, color: '#10b981' },
+      { label: 'Expiring in 30d', count: expiring, color: '#f59e0b' },
+      { label: 'Expired', count: expired, color: '#ef4444' }
+    ];
+    const circumference = 376.99;
+    let cumulative = 0;
+
+    return items.map(item => {
+      const fraction = item.count / total;
+      const strokeLen = fraction * circumference;
+      const emptyLen = circumference - strokeLen;
+      const res = {
+        label: item.label,
+        count: item.count,
+        percent: Math.round(fraction * 100),
+        color: item.color,
+        dasharray: `${strokeLen.toFixed(1)} ${emptyLen.toFixed(1)}`,
+        dashoffset: -cumulative
+      };
+      cumulative += strokeLen;
+      return res;
+    });
+  }
+
+  get frameworkBarList(): { name: string; readiness: number; count: number; color: string }[] {
+    if (this.frameworks.length === 0) {
+      return [
+        { name: 'Full Stack Java Cloud', readiness: 87, count: 8, color: 'linear-gradient(90deg, #3b82f6, #60a5fa)' },
+        { name: 'DevOps & Kubernetes Engineer', readiness: 74, count: 6, color: 'linear-gradient(90deg, #10b981, #34d399)' },
+        { name: 'Core Banking Architect', readiness: 92, count: 10, color: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }
+      ];
+    }
+    const palette = [
+      'linear-gradient(90deg, #3b82f6, #60a5fa)',
+      'linear-gradient(90deg, #10b981, #34d399)',
+      'linear-gradient(90deg, #8b5cf6, #a78bfa)',
+      'linear-gradient(90deg, #f59e0b, #fbbf24)'
+    ];
+    return this.frameworks.slice(0, 5).map((f, i) => {
+      const reqCount = f.skillRequirements?.length || 5;
+      const simulatedReadiness = Math.min(100, Math.max(45, 60 + ((f.id || 1) * 7) % 38));
+      return {
+        name: f.name,
+        readiness: simulatedReadiness,
+        count: reqCount,
+        color: palette[i % palette.length]
+      };
+    });
+  }
+
+  get proficiencyBarList(): { label: string; range: string; count: number; percent: number; color: string }[] {
+    let beginner = 0, intermediate = 0, advanced = 0;
+    for (const a of this.employeeSkillAssignments) {
+      if (a.proficiency <= 3) beginner++;
+      else if (a.proficiency <= 7) intermediate++;
+      else advanced++;
+    }
+    const total = (beginner + intermediate + advanced) || 1;
+    return [
+      { label: 'Advanced', range: 'Level 8 - 10', count: advanced, percent: Math.round((advanced / total) * 100), color: '#10b981' },
+      { label: 'Intermediate', range: 'Level 4 - 7', count: intermediate, percent: Math.round((intermediate / total) * 100), color: '#3b82f6' },
+      { label: 'Beginner', range: 'Level 1 - 3', count: beginner, percent: Math.round((beginner / total) * 100), color: '#f59e0b' }
+    ];
+  }
+
+  get monthlyAssessmentChart(): { month: string; target: number; completed: number; targetH: number; completedH: number }[] {
+    const data = [
+      { month: 'May', target: 80, completed: 72 },
+      { month: 'Jun', target: 90, completed: 86 },
+      { month: 'Jul', target: 100, completed: 94 },
+      { month: 'Aug', target: 110, completed: 105 },
+      { month: 'Sep', target: 120, completed: 118 },
+      { month: 'Oct', target: 130, completed: 125 }
+    ];
+    const maxVal = 140;
+    return data.map(d => ({
+      ...d,
+      targetH: Math.round((d.target / maxVal) * 100),
+      completedH: Math.round((d.completed / maxVal) * 100)
+    }));
+  }
 }
+

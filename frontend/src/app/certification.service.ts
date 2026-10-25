@@ -28,4 +28,12 @@ export class CertificationService {
   deleteCertification(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  getComplianceMetrics(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/compliance-metrics`);
+  }
+
+  renewCertification(id: number): Observable<Certification> {
+    return this.http.post<Certification>(`${this.apiUrl}/${id}/renew`, {});
+  }
 }

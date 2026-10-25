@@ -103,3 +103,71 @@ export interface Certification {
   status?: string;
   employee?: { id?: number; name?: string; email?: string };
 }
+
+export interface Course {
+  id?: number;
+  title: string;
+  description: string;
+  durationHours: number;
+  instructor: string;
+  courseType: string;
+  rating: number;
+  totalEnrolled: number;
+  totalCompleted: number;
+  category: string;
+}
+
+export interface CourseEnrollment {
+  id?: number;
+  course: Course;
+  employeeId?: number;
+  studentId?: number;
+  status: string;
+  progressPercentage: number;
+  enrolledAt: string;
+  completedAt?: string;
+}
+
+export interface LearningPath {
+  id?: number;
+  title: string;
+  description: string;
+  targetRole: string;
+  totalCourses: number;
+  progressPercentage: number;
+  coursesSummary: string;
+}
+
+export interface CareerPlan {
+  id?: number;
+  employeeId?: number;
+  studentId?: number;
+  currentRole: string;
+  targetRole: string;
+  progressPercentage: number;
+  skillGaps: string;
+  mentorName: string;
+  promotionReadinessScore: number;
+  promotionEligibility: string;
+  status: string;
+}
+
+export interface InternalJob {
+  id?: number;
+  title: string;
+  department: string;
+  description: string;
+  requiredSkills: string;
+  openingsCount: number;
+  status: string;
+}
+
+export interface JobApplication {
+  id?: number;
+  job: InternalJob;
+  employeeId?: number;
+  studentId?: number;
+  appliedAt: string;
+  matchPercentage: number;
+  status: string;
+}

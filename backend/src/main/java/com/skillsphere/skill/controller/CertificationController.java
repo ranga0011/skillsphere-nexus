@@ -91,4 +91,16 @@ public class CertificationController {
     public void deleteCertification(@PathVariable Long id) {
         certificationService.deleteCertification(id);
     }
+
+    @GetMapping("/compliance-metrics")
+    public com.skillsphere.skill.service.CertificateModels.ComplianceSummaryResponse getComplianceMetrics() {
+        return certificationService.getComplianceMetrics();
+    }
+
+    @PostMapping("/{id}/renew")
+    public Certification renewCertification(@PathVariable Long id) {
+        Certification cert = certificationService.getCertificationById(id);
+        authorizationService.requireEmployeeAccess(cert.getEmployeeId());
+        return certificationService.renewCertification(id);
+    }
 }

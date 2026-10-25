@@ -66,4 +66,26 @@ public class AuthorizationService {
             throw new AccessDeniedException("A linked profile is required");
         }
     }
-}
+
+    public boolean isEmployee() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_EMPLOYEE"));
+    }
+
+    public Long getCurrentEmployeeId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+            return JwtService.employeeIdFromClaims(jwtAuthentication.getToken().getClaims());
+        }
+        return null;
+    }
+
+    public Long getCurrentStudentId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthentication) {
+            return JwtService.studentIdFromClaims(jwtAuthentication.getToken().getClaims());
+        }
+        return null;
+    }
+}

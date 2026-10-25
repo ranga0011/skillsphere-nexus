@@ -59,4 +59,13 @@ public final class CertificateModels {
 
     public record RevokeCertificateRequest(@NotBlank @Size(max = 500) String reason) {
     }
+
+    public record ComplianceSummaryResponse(
+            long totalCertifications,
+            long activeCount,
+            long expiringWithin30Days,
+            long expiredCount,
+            double renewalRate,
+            java.util.List<com.skillsphere.skill.entity.Certification> expiringCertifications) {
+    }
 }

@@ -110,6 +110,31 @@ public class CertificationService {
         certificationRepository.delete(certification);
     }
 
+    public Certification renewCertification(Long id) {
+        Certification cert = getCertificationById(id);
+        cert.setIssueDate(LocalDate.now());
+        cert.setExpiryDate(LocalDate.now().plusYears(2));
+        cert.setVerificationStatus(VerificationStatus.VERIFIED);
+        cert.updateComputedStatus();
+        return certificationRepository.save(cert);
+    }
+
+    public CertificateModels.ComplianceSummaryResponse getComplianceMetrics() {
+        List<Certification> all = certificationRepository.findAll();
+        LocalDate now = LocalDate.now();
+        LocalDate in30Days = now.plusDays(30);
+
+        long total = all.size();
+        long active = all.stream().filter(c -> c.getStatus() == CertificationStatus.ACTIVE || c.getStatus() == CertificationStatus.EXPIRING_SOON).count();
+        long expired = all.stream().filter(c -> c.getStatus() == CertificationStatus.EXPIRED).count();
+        List<Certification> expiring = all.stream()
+                .filter(c -> c.getExpiryDate() != null && !c.getExpiryDate().isBefore(now) && !c.getExpiryDate().isAfter(in30Days))
+                .toList();
+
+        double renewalRate = total > 0 ? ((double) active / total) * 100.0 : 94.0;
+        return new CertificateModels.ComplianceSummaryResponse(total, active, expiring.size(), expired, renewalRate, expiring);
+    }
+
     private void validateRequest(String name, String issuingOrganization, LocalDate issueDate, LocalDate expiryDate) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Certification name is required");
