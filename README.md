@@ -54,7 +54,7 @@ docker compose up -d
 | Frontend | Angular 20, TypeScript, SCSS |
 | Backend | Java 25, Spring Boot 3 |
 | Database | PostgreSQL (Production / Dev), H2 (Automated Test Isolation) |
-| Security | Spring Security, JJWT (JSON Web Token) |
+| Security | Spring Security, JWT (JSON Web Token) |
 | Database Migrations | Flyway (V1 - V4) |
 | Document Generation | OpenPDF (TrueType Unicode Font Rendering) |
 | Build Tools | Maven Wrapper (`mvnw`), npm |
