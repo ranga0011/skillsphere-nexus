@@ -89,21 +89,59 @@
             <span class="bell-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
           </button>
 
-          <!-- Notification Dropdown Popover -->
+                    <!-- Notification Dropdown Popover -->
           <div class="notification-dropdown" *ngIf="showNotifications">
             <div class="notif-header">
-              <span class="notif-title">Compliance &amp; Learning Alerts</span>
-              <button class="notif-read-btn" type="button" (click)="markAllNotificationsRead()" [disabled]="unreadNotificationCount === 0">
-                {{ unreadNotificationCount === 0 ? 'All read' : 'Mark read' }}
-              </button>
+              <div class="notif-header-title-row">
+                <span class="notif-title">Compliance &amp; Learning Alerts</span>
+                <div class="notif-header-actions">
+                  <button
+                    class="notif-read-btn"
+                    type="button"
+                    (click)="markAllNotificationsRead()"
+                    [disabled]="unreadNotificationCount === 0"
+                    title="Mark all as read"
+                  >
+                    {{ unreadNotificationCount === 0 ? 'All read' : 'Mark all read' }}
+                  </button>
+                  <button
+                    *ngIf="notificationTab === 'all' && activeNotifications.length > 0"
+                    class="notif-clear-btn"
+                    type="button"
+                    (click)="clearAllNotifications()"
+                    title="Clear all alerts"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+              <div class="notif-tabs">
+                <button
+                  type="button"
+                  class="notif-tab"
+                  [class.active]="notificationTab === 'unread'"
+                  (click)="notificationTab = 'unread'"
+                >
+                  Unread
+                  <span class="notif-tab-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="notif-tab"
+                  [class.active]="notificationTab === 'all'"
+                  (click)="notificationTab = 'all'"
+                >
+                  All ({{ activeNotifications.length }})
+                </button>
+              </div>
             </div>
+
             <div class="notif-list">
               <div
-                *ngFor="let notif of activeNotifications"
+                *ngFor="let notif of displayedNotifications"
                 class="notif-item alert-{{ notif.type }}"
                 [class.is-read]="notif.isRead"
                 [class.is-unread]="!notif.isRead"
-                (click)="toggleNotificationRead(notif.id)"
               >
                 <div class="notif-icon">
                   <span *ngIf="notif.type === 'warning'" style="color:#d97706;font-weight:bold;">!</span>
@@ -113,7 +151,17 @@
                 <div class="notif-info">
                   <div class="notif-row">
                     <p class="notif-lead">{{ notif.title }}</p>
-                    <span class="notif-time">{{ notif.time }}</span>
+                    <div class="notif-top-actions">
+                      <span class="notif-time">{{ notif.time }}</span>
+                      <button
+                        class="notif-dismiss-btn"
+                        type="button"
+                        (click)="dismissNotification(notif.id, $event)"
+                        title="Dismiss notification"
+                      >
+                        &times;
+                      </button>
+                    </div>
                   </div>
                   <p class="notif-desc">{{ notif.description }}</p>
                   <div class="notif-bottom-row">
@@ -133,8 +181,34 @@
                 <span class="notif-unread-dot" *ngIf="!notif.isRead" title="Unread notification"></span>
               </div>
 
-              <div class="notif-item is-read" *ngIf="activeNotifications.length === 0" style="text-align:center;justify-content:center;padding:24px 16px;">
-                <p style="margin:0;color:#64748b;font-size:13px;">All caught up! No active notifications.</p>
+              <!-- Empty state -->
+              <div class="notif-empty-state" *ngIf="displayedNotifications.length === 0">
+                <div class="notif-empty-icon">&#10003;</div>
+                <p class="notif-empty-title">All caught up!</p>
+                <p class="notif-empty-desc" *ngIf="notificationTab === 'unread'">
+                  {{ activeNotifications.length > 0 ? 'All notifications have been marked as read.' : 'You have no active alerts.' }}
+                </p>
+                <p class="notif-empty-desc" *ngIf="notificationTab === 'all'">
+                  No notifications recorded.
+                </p>
+                <div class="notif-empty-actions">
+                  <button
+                    *ngIf="notificationTab === 'unread' && activeNotifications.length > 0"
+                    class="notif-view-all-link"
+                    type="button"
+                    (click)="notificationTab = 'all'"
+                  >
+                    View past alerts ({{ activeNotifications.length }})
+                  </button>
+                  <button
+                    *ngIf="activeNotifications.length === 0"
+                    class="notif-reset-btn"
+                    type="button"
+                    (click)="resetNotifications()"
+                  >
+                    Restore sample alerts
+                  </button>
+                </div>
               </div>
             </div>
           </div>

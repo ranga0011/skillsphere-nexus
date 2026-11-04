@@ -328,16 +328,27 @@ export class WorkspaceComponent implements OnInit {
     }
   ];
 
+    notificationTab: 'unread' | 'all' = 'unread';
+  dismissedNotificationIds: string[] = [];
+
   get hasExpiringCerts(): boolean {
     return this.complianceSummary ? this.complianceSummary.expiringIn30Days > 0 : true;
   }
 
   get activeNotifications() {
     return this.notifications.filter(n => {
+      if (this.dismissedNotificationIds.includes(n.id)) return false;
       if (n.requiresHr && !this.isHrAdmin) return false;
       if (n.requiresExpiringCerts && !this.hasExpiringCerts) return false;
       return true;
     });
+  }
+
+  get displayedNotifications() {
+    if (this.notificationTab === 'unread') {
+      return this.activeNotifications.filter(n => !n.isRead);
+    }
+    return this.activeNotifications;
   }
 
   get unreadNotificationCount(): number {
@@ -361,6 +372,42 @@ export class WorkspaceComponent implements OnInit {
     if (notif) {
       notif.isRead = true;
       this.saveNotificationState();
+    }
+  }
+
+  dismissNotification(id: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!this.dismissedNotificationIds.includes(id)) {
+      this.dismissedNotificationIds.push(id);
+    }
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.isRead = true;
+    }
+    this.saveNotificationState();
+  }
+
+  clearAllNotifications(): void {
+    this.activeNotifications.forEach(n => {
+      if (!this.dismissedNotificationIds.includes(n.id)) {
+        this.dismissedNotificationIds.push(n.id);
+      }
+      n.isRead = true;
+    });
+    this.saveNotificationState();
+  }
+
+  resetNotifications(): void {
+    this.dismissedNotificationIds = [];
+    this.notifications.forEach(n => (n.isRead = false));
+    this.notificationTab = 'unread';
+    try {
+      localStorage.removeItem('skillsphere_read_notifs');
+      localStorage.removeItem('skillsphere_dismissed_notifs');
+    } catch {
+      // ignore storage errors
     }
   }
 
@@ -388,6 +435,13 @@ export class WorkspaceComponent implements OnInit {
           });
         }
       }
+      const dismissed = localStorage.getItem('skillsphere_dismissed_notifs');
+      if (dismissed) {
+        const dismissedIds: string[] = JSON.parse(dismissed);
+        if (Array.isArray(dismissedIds)) {
+          this.dismissedNotificationIds = dismissedIds;
+        }
+      }
     } catch {
       // ignore storage errors
     }
@@ -397,6 +451,7 @@ export class WorkspaceComponent implements OnInit {
     try {
       const readIds = this.notifications.filter(n => n.isRead).map(n => n.id);
       localStorage.setItem('skillsphere_read_notifs', JSON.stringify(readIds));
+      localStorage.setItem('skillsphere_dismissed_notifs', JSON.stringify(this.dismissedNotificationIds));
     } catch {
       // ignore storage errors
     }
