@@ -281,20 +281,126 @@ export class WorkspaceComponent implements OnInit {
 
   // Notification & Expiry Alert State
   showNotifications = false;
-  unreadNotificationCount = 2;
+
+  notifications: {
+    id: string;
+    title: string;
+    description: string;
+    tag: string;
+    icon: string;
+    type: 'warning' | 'info' | 'success';
+    isRead: boolean;
+    time: string;
+    requiresHr?: boolean;
+    requiresExpiringCerts?: boolean;
+  }[] = [
+    {
+      id: 'notif-cka-expiry',
+      title: 'Certification Expiry Notice',
+      description: 'CKA: Certified Kubernetes Administrator expires in 18 days. Urgent renewal required to maintain team compliance.',
+      tag: 'Milestone 3 Expiry Tracking',
+      icon: '⚠️',
+      type: 'warning',
+      isRead: false,
+      time: '10m ago',
+      requiresExpiringCerts: true
+    },
+    {
+      id: 'notif-audit-queue',
+      title: 'Audit Queue Pending',
+      description: 'Self-reported skill assessments and employee certifications awaiting HR administrative verification.',
+      tag: 'Action: Review Required',
+      icon: '📋',
+      type: 'info',
+      isRead: false,
+      time: '1h ago',
+      requiresHr: true
+    },
+    {
+      id: 'notif-lms-sync',
+      title: 'LMS Learning Sync',
+      description: 'Course progress and competency frameworks synchronised with enterprise catalog.',
+      tag: 'Status: Validated',
+      icon: '✓',
+      type: 'success',
+      isRead: false,
+      time: '2h ago'
+    }
+  ];
+
+  get hasExpiringCerts(): boolean {
+    return this.complianceSummary ? this.complianceSummary.expiringIn30Days > 0 : true;
+  }
+
+  get activeNotifications() {
+    return this.notifications.filter(n => {
+      if (n.requiresHr && !this.isHrAdmin) return false;
+      if (n.requiresExpiringCerts && !this.hasExpiringCerts) return false;
+      return true;
+    });
+  }
+
+  get unreadNotificationCount(): number {
+    return this.activeNotifications.filter(n => !n.isRead).length;
+  }
 
   toggleNotificationPopover(): void {
     this.showNotifications = !this.showNotifications;
   }
 
   markAllNotificationsRead(): void {
-    this.unreadNotificationCount = 0;
+    this.activeNotifications.forEach(n => (n.isRead = true));
+    this.saveNotificationState();
   }
 
-  get hasExpiringCerts(): boolean {
-    return this.complianceSummary ? this.complianceSummary.expiringIn30Days > 0 : true;
+  markNotificationRead(id: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.isRead = true;
+      this.saveNotificationState();
+    }
   }
 
+  toggleNotificationRead(id: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.isRead = !notif.isRead;
+      this.saveNotificationState();
+    }
+  }
+
+  private loadNotificationState(): void {
+    try {
+      const stored = localStorage.getItem('skillsphere_read_notifs');
+      if (stored) {
+        const readIds: string[] = JSON.parse(stored);
+        if (Array.isArray(readIds)) {
+          this.notifications.forEach(n => {
+            if (readIds.includes(n.id)) {
+              n.isRead = true;
+            }
+          });
+        }
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  private saveNotificationState(): void {
+    try {
+      const readIds = this.notifications.filter(n => n.isRead).map(n => n.id);
+      localStorage.setItem('skillsphere_read_notifs', JSON.stringify(readIds));
+    } catch {
+      // ignore storage errors
+    }
+  }
   constructor(
     private http: HttpClient,
     private skillService: SkillService,
@@ -310,6 +416,7 @@ export class WorkspaceComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadNotificationState();
     this.loadCourses();
     this.loadLearningPaths();
     this.loadComplianceSummary();
