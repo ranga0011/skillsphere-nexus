@@ -68,4 +68,35 @@ public final class CertificateModels {
             double renewalRate,
             java.util.List<com.skillsphere.skill.entity.Certification> expiringCertifications) {
     }
+
+    public record CertificateAuthenticityRequest(
+            String name,
+            String issuingOrganization,
+            String credentialId,
+            LocalDate issueDate,
+            LocalDate expiryDate,
+            String documentName,
+            String documentType,
+            String documentData) {
+    }
+
+    public record CertificateAuthenticityCheck(
+            String name,
+            boolean passed,
+            String details) {
+    }
+
+    public record CertificateAuthenticityResponse(
+            boolean authentic,
+            int confidenceScore,
+            String status,
+            String issuer,
+            String credentialId,
+            String verificationHash,
+            boolean digitalSignatureValid,
+            String tamperEvidence,
+            java.util.List<CertificateAuthenticityCheck> checks,
+            String verificationBadge,
+            String message) {
+    }
 }

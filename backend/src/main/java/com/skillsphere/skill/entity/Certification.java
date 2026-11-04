@@ -64,6 +64,24 @@ public class Certification {
     @Transient
     private Long employeeId;
 
+    @Column(name = "document_name", length = 255)
+    private String documentName;
+
+    @Column(name = "document_type", length = 100)
+    private String documentType;
+
+    @Column(name = "document_data", columnDefinition = "TEXT")
+    private String documentData;
+
+    @Column(name = "authenticity_status", length = 50)
+    private String authenticityStatus;
+
+    @Column(name = "authenticity_score")
+    private Integer authenticityScore;
+
+    @Column(name = "verification_hash", length = 128)
+    private String verificationHash;
+
     public Certification() {
     }
 
@@ -154,4 +172,53 @@ public class Certification {
     public void setEmployeeId(Long employeeId) {
         this.employeeId = employeeId;
     }
+
+    public String getDocumentName() {
+        return documentName;
+    }
+
+    public void setDocumentName(String documentName) {
+        this.documentName = documentName;
+    }
+
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
+    }
+
+    public String getDocumentData() {
+        return documentData;
+    }
+
+    public void setDocumentData(String documentData) {
+        this.documentData = documentData;
+    }
+
+    public String getAuthenticityStatus() {
+        return authenticityStatus;
+    }
+
+    public void setAuthenticityStatus(String authenticityStatus) {
+        this.authenticityStatus = authenticityStatus;
+    }
+
+    public Integer getAuthenticityScore() {
+        return authenticityScore;
+    }
+
+    public void setAuthenticityScore(Integer authenticityScore) {
+        this.authenticityScore = authenticityScore;
+    }
+
+    public String getVerificationHash() {
+        return verificationHash;
+    }
+
+    public void setVerificationHash(String verificationHash) {
+        this.verificationHash = verificationHash;
+    }
+
 }

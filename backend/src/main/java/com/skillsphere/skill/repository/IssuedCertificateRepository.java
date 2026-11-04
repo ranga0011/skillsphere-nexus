@@ -28,4 +28,7 @@ public interface IssuedCertificateRepository extends JpaRepository<IssuedCertifi
 
     @EntityGraph(attributePaths = {"skill"})
     Optional<IssuedCertificate> findByVerificationToken(String verificationToken);
+
+    @EntityGraph(attributePaths = {"skill"})
+    Optional<IssuedCertificate> findByCertificateNumber(String certificateNumber);
 }

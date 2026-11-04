@@ -135,4 +135,10 @@ public class CertificationController {
         authorizationService.requireEmployeeAccess(cert.getEmployeeId());
         return certificationService.renewCertification(id);
     }
+
+    @PostMapping("/verify-authenticity")
+    public com.skillsphere.skill.service.CertificateModels.CertificateAuthenticityResponse verifyAuthenticity(
+            @RequestBody com.skillsphere.skill.service.CertificateModels.CertificateAuthenticityRequest request) {
+        return certificationService.verifyCertificateAuthenticity(request);
+    }
 }

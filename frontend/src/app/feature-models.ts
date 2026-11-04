@@ -101,7 +101,33 @@ export interface Certification {
   expiryDate?: string | null;
   verificationStatus?: string;
   status?: string;
+  documentName?: string;
+  documentType?: string;
+  documentData?: string;
+  authenticityStatus?: string;
+  authenticityScore?: number;
+  verificationHash?: string;
   employee?: { id?: number; name?: string; email?: string };
+}
+
+export interface CertificateAuthenticityCheck {
+  name: string;
+  passed: boolean;
+  details: string;
+}
+
+export interface CertificateAuthenticityResponse {
+  authentic: boolean;
+  confidenceScore: number;
+  status: string;
+  issuer: string;
+  credentialId: string;
+  verificationHash: string;
+  digitalSignatureValid: boolean;
+  tamperEvidence: string;
+  checks: CertificateAuthenticityCheck[];
+  verificationBadge: string;
+  message: string;
 }
 
 export interface Course {

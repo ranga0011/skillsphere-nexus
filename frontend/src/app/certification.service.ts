@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Certification } from './feature-models';
+import { Certification, CertificateAuthenticityResponse } from './feature-models';
 
 @Injectable({ providedIn: 'root' })
 export class CertificationService {
@@ -35,5 +35,9 @@ export class CertificationService {
 
   renewCertification(id: number): Observable<Certification> {
     return this.http.post<Certification>(`${this.apiUrl}/${id}/renew`, {});
+  }
+
+  verifyAuthenticity(payload: Partial<Certification>): Observable<CertificateAuthenticityResponse> {
+    return this.http.post<CertificateAuthenticityResponse>(`${this.apiUrl}/verify-authenticity`, payload);
   }
 }

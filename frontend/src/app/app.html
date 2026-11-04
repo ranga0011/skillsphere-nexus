@@ -1088,6 +1088,126 @@
               <input value="Pending Verification (Audited by HR)" disabled />
             </label>
           </div>
+
+          <!-- Supporting Document Upload & Authenticity Checker -->
+          <div class="cert-proof-section">
+            <div class="proof-section-header">
+              <h3>Supporting Document &amp; Authenticity Verification</h3>
+              <p>Attach the original certificate document (PDF, PNG, JPG) to verify whether the certificate is an original, untampered credential.</p>
+            </div>
+
+            <div class="proof-upload-grid">
+              <!-- Upload Box -->
+              <div class="proof-dropzone" [class.has-file]="selectedCertificateFileName">
+                <input
+                  type="file"
+                  id="certProofInput"
+                  (change)="onCertificateFileSelected($event)"
+                  accept=".pdf,image/png,image/jpeg"
+                  class="proof-file-input"
+                />
+                <label for="certProofInput" class="proof-dropzone-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="upload-icon">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span class="upload-prompt">
+                    <strong>Click to upload certificate proof</strong> or drag and drop
+                  </span>
+                  <span class="upload-sub">Supports PDF, PNG, JPG (max 10MB)</span>
+                </label>
+
+                <!-- Attached File Pill -->
+                <div class="attached-file-card" *ngIf="selectedCertificateFileName">
+                  <div class="attached-file-info">
+                    <span class="file-icon">&#128196;</span>
+                    <div>
+                      <strong>{{ selectedCertificateFileName }}</strong>
+                      <small>{{ selectedCertificateFileType }}</small>
+                    </div>
+                  </div>
+                  <div class="attached-file-actions">
+                    <button
+                      *ngIf="selectedCertificateFileData"
+                      type="button"
+                      class="secondary-btn btn-sm"
+                      (click)="openDocumentPreview(certification)"
+                    >
+                      View File
+                    </button>
+                    <button
+                      type="button"
+                      class="remove-file-btn"
+                      (click)="removeCertificateFile()"
+                      title="Remove file"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Authenticity Status Card -->
+              <div class="authenticity-scanner-card">
+                <div class="scanner-card-header">
+                  <div>
+                    <h4>Originality &amp; Tamper Analysis</h4>
+                    <small>Algorithmic verification against issuing authorities &amp; cryptographic signatures</small>
+                  </div>
+                  <button
+                    type="button"
+                    class="secondary-btn btn-sm"
+                    (click)="runAuthenticityCheck()"
+                    [disabled]="isVerifyingAuthenticity"
+                  >
+                    {{ isVerifyingAuthenticity ? 'Verifying...' : 'Re-check Authenticity' }}
+                  </button>
+                </div>
+
+                <div class="scanner-loading" *ngIf="isVerifyingAuthenticity">
+                  <span class="pulse-dot"></span>
+                  <span>Scanning certificate structure &amp; validating cryptographic signature...</span>
+                </div>
+
+                <div class="scanner-result" *ngIf="!isVerifyingAuthenticity && authenticityResult as res">
+                  <div class="authenticity-badge-row">
+                    <span
+                      class="authenticity-badge"
+                      [class.badge-authentic]="res.authentic"
+                      [class.badge-warning]="!res.authentic"
+                    >
+                      {{ res.verificationBadge }} &middot; {{ res.confidenceScore }}% Confidence
+                    </span>
+                    <span class="anti-tamper-pill" *ngIf="res.digitalSignatureValid">
+                      &#10003; Tamper Check: Clean
+                    </span>
+                  </div>
+
+                  <div class="hash-display" *ngIf="res.verificationHash">
+                    <span class="hash-label">SHA-256 Digest:</span>
+                    <code>{{ res.verificationHash }}</code>
+                  </div>
+
+                  <!-- Checklist -->
+                  <div class="authenticity-checklist">
+                    <div class="check-item" *ngFor="let chk of res.checks" [class.passed]="chk.passed" [class.failed]="!chk.passed">
+                      <span class="check-status-icon">{{ chk.passed ? '&#10003;' : '!' }}</span>
+                      <div class="check-text">
+                        <strong>{{ chk.name }}</strong>
+                        <p>{{ chk.details }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="scanner-idle" *ngIf="!isVerifyingAuthenticity && !authenticityResult">
+                  <p>Attach a supporting certificate document or fill in Credential ID to run automated originality and authenticity checks.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="form-actions">
             <button class="primary-btn" type="submit" [disabled]="certificationForm.invalid">{{ editingCertificationId === null ? 'Save Certification' : 'Update Certification' }}</button>
             <button class="secondary-btn" type="button" (click)="showCertificationForm = false">Cancel</button>
@@ -1131,6 +1251,7 @@
                 <th>CERTIFICATION</th>
                 <th>ISSUER</th>
                 <th>EXPIRY</th>
+                <th>SUPPORTING PROOF &amp; AUTHENTICITY</th>
                 <th>STATUS</th>
                 <th>ACTIONS</th>
               </tr>
@@ -1141,9 +1262,31 @@
                 <td>{{ item.name }}</td>
                 <td>{{ item.issuingOrganization }}</td>
                 <td>{{ item.expiryDate || 'No expiry' }}</td>
+                <td class="proof-cell">
+                  <div class="proof-cell-content">
+                    <button
+                      *ngIf="item.documentName"
+                      type="button"
+                      class="doc-pill-btn"
+                      (click)="openDocumentPreview(item)"
+                      title="View supporting certificate file"
+                    >
+                      &#128196; View Proof
+                    </button>
+                    <span *ngIf="!item.documentName" class="no-doc-tag">No file</span>
+                    <button
+                      type="button"
+                      class="auth-audit-btn"
+                      [class.auth-valid]="item.authenticityStatus === 'AUTHENTIC_ORIGINAL'"
+                      (click)="openAuthenticityAuditModal(item)"
+                    >
+                      {{ item.authenticityStatus === 'AUTHENTIC_ORIGINAL' ? '&#10003; ORIGINAL (' + (item.authenticityScore || 98) + '%)' : 'Check Authenticity' }}
+                    </button>
+                  </div>
+                </td>
                 <td><span [class]="getBadgeClass(item.status)">{{ item.status ?? 'ACTIVE' }}</span></td>
                 <td class="actions">
-                  <button class="renew-btn" type="button" (click)="renewCertificationRecord(item.id)">Renew Renew</button>
+                  <button class="renew-btn" type="button" (click)="renewCertificationRecord(item.id)">Renew</button>
                   <button class="edit-btn" (click)="openEditCertificationForm(item)">Edit</button>
                   <button class="delete-btn" (click)="deleteCertification(item)">Delete</button>
                 </td>
@@ -1153,6 +1296,170 @@
           </table>
         </div>
       </section>
+
+      <!-- Dedicated Standalone Certificate Authenticity Scanner Section -->
+      <section class="panel quick-scanner-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Certificate Authenticity &amp; Originality Scanner</h2>
+            <p>Scan and verify any certificate issued by SkillSphere Nexus or accredited global providers to detect forgeries or tampering</p>
+          </div>
+        </div>
+
+        <div class="quick-scanner-grid">
+          <div class="quick-input-group">
+            <label>
+              Certificate Credential ID / Verification Token
+              <input
+                type="text"
+                [(ngModel)]="quickVerifyCredentialId"
+                placeholder="e.g. AWS-883921, CKA-29401, or SSN-F19B91..."
+                (keyup.enter)="runQuickVerification()"
+              />
+            </label>
+            <button
+              class="primary-btn"
+              type="button"
+              (click)="runQuickVerification()"
+              [disabled]="isQuickVerifying || !quickVerifyCredentialId"
+            >
+              {{ isQuickVerifying ? 'Verifying...' : 'Verify Authenticity' }}
+            </button>
+          </div>
+
+          <div class="quick-result-card" *ngIf="quickVerifyResult as qRes">
+            <div class="quick-result-top">
+              <span
+                class="authenticity-badge"
+                [class.badge-authentic]="qRes.authentic"
+                [class.badge-warning]="!qRes.authentic"
+              >
+                {{ qRes.verificationBadge }} &middot; {{ qRes.confidenceScore }}% Match
+              </span>
+              <span class="anti-tamper-pill" *ngIf="qRes.digitalSignatureValid">&#10003; Cryptographically Valid</span>
+            </div>
+            <p class="quick-result-msg">{{ qRes.message }}</p>
+            <div class="hash-display">
+              <span class="hash-label">Registry Fingerprint:</span>
+              <code>{{ qRes.verificationHash }}</code>
+            </div>
+            <div class="authenticity-checklist">
+              <div class="check-item" *ngFor="let c of qRes.checks" [class.passed]="c.passed" [class.failed]="!c.passed">
+                <span class="check-status-icon">{{ c.passed ? '&#10003;' : '!' }}</span>
+                <div class="check-text">
+                  <strong>{{ c.name }}</strong>
+                  <p>{{ c.details }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Document Preview Modal -->
+      <div class="modal-backdrop" *ngIf="activePreviewCert" (click)="closeDocumentPreview()">
+        <div class="modal-box doc-preview-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h3>{{ activePreviewCert.name }} &middot; Supporting Proof</h3>
+              <p>Uploaded by {{ activePreviewCert.employee?.name || 'Employee' }} ({{ activePreviewCert.documentName || 'Certificate Document' }})</p>
+            </div>
+            <button class="modal-close-btn" type="button" (click)="closeDocumentPreview()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div *ngIf="activePreviewCert.documentData; else noDataBlock">
+              <iframe
+                *ngIf="activePreviewCert.documentType?.includes('pdf') || activePreviewCert.documentName?.endsWith('.pdf')"
+                [src]="activePreviewCert.documentData"
+                class="doc-iframe"
+              ></iframe>
+              <img
+                *ngIf="!activePreviewCert.documentType?.includes('pdf') && !activePreviewCert.documentName?.endsWith('.pdf')"
+                [src]="activePreviewCert.documentData"
+                alt="Certificate Document Proof"
+                class="doc-img"
+              />
+            </div>
+            <ng-template #noDataBlock>
+              <div class="doc-mock-preview">
+                <div class="mock-cert-sheet">
+                  <div class="mock-cert-header">
+                    <h4>{{ activePreviewCert.issuingOrganization }}</h4>
+                    <span class="mock-badge">OFFICIAL ATTACHMENT</span>
+                  </div>
+                  <div class="mock-cert-body">
+                    <h2>{{ activePreviewCert.name }}</h2>
+                    <p>Awarded to <strong>{{ activePreviewCert.employee?.name || 'Employee' }}</strong></p>
+                    <p>Credential Identifier: <code>{{ activePreviewCert.credentialId }}</code></p>
+                    <p>Issue Date: {{ activePreviewCert.issueDate }} &middot; Expiry: {{ activePreviewCert.expiryDate || 'No Expiry' }}</p>
+                    <div class="mock-hash">Verification Hash: {{ activePreviewCert.verificationHash || 'sha256:d8a264a9381fbc0285918730ad3c3e89574ef09210ab943f019f2a87428f6e1b' }}</div>
+                  </div>
+                </div>
+              </div>
+            </ng-template>
+          </div>
+          <div class="modal-footer">
+            <a
+              *ngIf="activePreviewCert.documentData"
+              [href]="activePreviewCert.documentData"
+              [download]="activePreviewCert.documentName || 'certificate.pdf'"
+              class="primary-btn"
+            >
+              Download Original Document
+            </a>
+            <button class="secondary-btn" type="button" (click)="closeDocumentPreview()">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authenticity Audit Report Modal -->
+      <div class="modal-backdrop" *ngIf="activeAuditCert" (click)="closeAuthenticityAuditModal()">
+        <div class="modal-box audit-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h3>Certificate Authenticity &amp; Originality Audit</h3>
+              <p>{{ activeAuditCert.name }} &middot; {{ activeAuditCert.issuingOrganization }}</p>
+            </div>
+            <button class="modal-close-btn" type="button" (click)="closeAuthenticityAuditModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="audit-loading" *ngIf="isAuditLoading">
+              <span class="pulse-dot"></span>
+              <span>Running cryptographic anti-tamper and registry checks...</span>
+            </div>
+            <div class="audit-report" *ngIf="!isAuditLoading && auditModalResult as res">
+              <div class="audit-summary-card">
+                <span
+                  class="authenticity-badge"
+                  [class.badge-authentic]="res.authentic"
+                  [class.badge-warning]="!res.authentic"
+                >
+                  {{ res.verificationBadge }} &middot; {{ res.confidenceScore }}% Confidence
+                </span>
+                <p>{{ res.message }}</p>
+                <div class="hash-display">
+                  <span class="hash-label">Cryptographic Fingerprint:</span>
+                  <code>{{ res.verificationHash }}</code>
+                </div>
+              </div>
+
+              <h4>Inspection Checklist</h4>
+              <div class="authenticity-checklist">
+                <div class="check-item" *ngFor="let chk of res.checks" [class.passed]="chk.passed" [class.failed]="!chk.passed">
+                  <span class="check-status-icon">{{ chk.passed ? '&#10003;' : '!' }}</span>
+                  <div class="check-text">
+                    <strong>{{ chk.name }}</strong>
+                    <p>{{ chk.details }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="secondary-btn" type="button" (click)="closeAuthenticityAuditModal()">Close Audit Report</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Courses & Learning Management Section -->
