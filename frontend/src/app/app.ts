@@ -143,6 +143,142 @@ export class WorkspaceComponent implements OnInit {
   newJob: InternalJob = { title: '', department: 'Engineering', description: '', requiredSkills: '', openingsCount: 1, status: 'OPEN' };
   showJobForm = false;
 
+  // Search queries for UI tables
+  employeeSearch = '';
+  skillSearch = '';
+  assignmentSearch = '';
+  assessmentSearch = '';
+  frameworkSearch = '';
+  certificateSearch = '';
+  certificationSearch = '';
+  courseSearch = '';
+  jobSearch = '';
+
+  get filteredEmployees(): Employee[] {
+    const q = this.employeeSearch.trim().toLowerCase();
+    if (!q) return this.employees;
+    return this.employees.filter(e =>
+      (e.name && e.name.toLowerCase().includes(q)) ||
+      (e.email && e.email.toLowerCase().includes(q)) ||
+      (e.jobTitle && e.jobTitle.toLowerCase().includes(q)) ||
+      (e.department && e.department.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredSkills(): Skill[] {
+    const q = this.skillSearch.trim().toLowerCase();
+    if (!q) return this.skills;
+    return this.skills.filter(s =>
+      (s.name && s.name.toLowerCase().includes(q)) ||
+      (s.category && s.category.toLowerCase().includes(q)) ||
+      (s.description && s.description.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredAssignments(): EmployeeSkillAssignment[] {
+    const q = this.assignmentSearch.trim().toLowerCase();
+    if (!q) return this.employeeSkillAssignments;
+    return this.employeeSkillAssignments.filter(a => {
+      const emp = this.employees.find(e => e.id === a.employeeId);
+      const sk = this.skills.find(s => s.id === a.skillId);
+      const empName = emp?.name?.toLowerCase() || '';
+      const skillName = sk?.name?.toLowerCase() || '';
+      const status = a.verificationStatus?.toLowerCase() || '';
+      return empName.includes(q) || skillName.includes(q) || status.includes(q);
+    });
+  }
+
+  get filteredAssessments(): Assessment[] {
+    const q = this.assessmentSearch.trim().toLowerCase();
+    if (!q) return this.assessments;
+    return this.assessments.filter(a => {
+      const emp = this.employees.find(e => e.id === a.employeeId);
+      const sk = this.skills.find(s => s.id === a.skillId);
+      const empName = emp?.name?.toLowerCase() || '';
+      const skillName = sk?.name?.toLowerCase() || '';
+      const assessor = a.assessorName?.toLowerCase() || '';
+      const status = a.verificationStatus?.toLowerCase() || '';
+      return empName.includes(q) || skillName.includes(q) || assessor.includes(q) || status.includes(q);
+    });
+  }
+
+  get filteredFrameworks(): CompetencyFramework[] {
+    const q = this.frameworkSearch.trim().toLowerCase();
+    if (!q) return this.frameworks;
+    return this.frameworks.filter(f =>
+      (f.roleTitle && f.roleTitle.toLowerCase().includes(q)) ||
+      (f.description && f.description.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredAchievementCertificates(): IssuedCertificate[] {
+    const q = this.certificateSearch.trim().toLowerCase();
+    if (!q) return this.achievementCertificates;
+    return this.achievementCertificates.filter(c =>
+      (c.certificateNumber && c.certificateNumber.toLowerCase().includes(q)) ||
+      (c.learnerName && c.learnerName.toLowerCase().includes(q)) ||
+      (c.skillName && c.skillName.toLowerCase().includes(q)) ||
+      (c.verificationToken && c.verificationToken.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredCertifications(): Certification[] {
+    const q = this.certificationSearch.trim().toLowerCase();
+    if (!q) return this.certifications;
+    return this.certifications.filter(c =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.issuingOrganization && c.issuingOrganization.toLowerCase().includes(q)) ||
+      (c.credentialId && c.credentialId.toLowerCase().includes(q)) ||
+      (c.employee?.name && c.employee.name.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredCourses(): Course[] {
+    const q = this.courseSearch.trim().toLowerCase();
+    if (!q) return this.courses;
+    return this.courses.filter(c =>
+      (c.title && c.title.toLowerCase().includes(q)) ||
+      (c.category && c.category.toLowerCase().includes(q)) ||
+      (c.instructor && c.instructor.toLowerCase().includes(q)) ||
+      (c.description && c.description.toLowerCase().includes(q))
+    );
+  }
+
+  get gapReadiness(): { readiness: number; satisfied: number; total: number; underRequired: number; unverified: number; notAssigned: number } {
+    if (!this.gapReport || this.gapReport.length === 0) {
+      return { readiness: 0, satisfied: 0, total: 0, underRequired: 0, unverified: 0, notAssigned: 0 };
+    }
+    let totalReq = 0;
+    let verifiedSum = 0;
+    let satisfied = 0;
+    let underRequired = 0;
+    let unverified = 0;
+    let notAssigned = 0;
+    for (const g of this.gapReport) {
+      const req = g.requiredProficiency || 0;
+      const emp = g.employeeProficiency || 0;
+      totalReq += req;
+      verifiedSum += Math.min(req, emp);
+      if (g.status === 'MATCHED') satisfied++;
+      else if (g.status === 'UNDER_REQUIRED') underRequired++;
+      else if (g.status === 'UNVERIFIED') unverified++;
+      else if (g.status === 'NOT_ASSIGNED') notAssigned++;
+    }
+    const readiness = totalReq === 0 ? 100 : Math.round((verifiedSum / totalReq) * 100);
+    return { readiness, satisfied, total: this.gapReport.length, underRequired, unverified, notAssigned };
+  }
+
+  get filteredJobs(): InternalJob[] {
+    const q = this.jobSearch.trim().toLowerCase();
+    if (!q) return this.internalJobs;
+    return this.internalJobs.filter(j =>
+      (j.title && j.title.toLowerCase().includes(q)) ||
+      (j.department && j.department.toLowerCase().includes(q)) ||
+      (j.requiredSkills && j.requiredSkills.toLowerCase().includes(q)) ||
+      (j.description && j.description.toLowerCase().includes(q))
+    );
+  }
+
   // Notification & Expiry Alert State
   showNotifications = false;
   unreadNotificationCount = 2;

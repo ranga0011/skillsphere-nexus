@@ -1,1 +1,183 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   SkillSphere Nexus - Global Styles & Design System Standards
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border: #cbd5e1;
+  --color-border-focus: #3b82f6;
+  --color-bg-page: #f8fafc;
+  --color-bg-card: #ffffff;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-main);
+  background-color: var(--color-bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+   Compact, Modern Form Controls Standard (Input, Select, Textarea)
+   -------------------------------------------------------------------------- */
+input[type="text"]:not(.table-search-input),
+input[type="email"]:not(.table-search-input),
+input[type="password"]:not(.table-search-input),
+input[type="number"]:not(.table-search-input),
+input[type="date"]:not(.table-search-input),
+input[type="url"]:not(.table-search-input),
+select {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 6px 11px !important;
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  line-height: 1.4 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  background-color: #ffffff !important;
+}
+
+textarea {
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  padding: 8px 11px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  line-height: 1.45 !important;
+  resize: vertical;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* --------------------------------------------------------------------------
+   Search Bar Component Styles (Aligned & Non-overlapping)
+   -------------------------------------------------------------------------- */
+.table-search-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  margin: 10px 0 16px;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  pointer-events: none;
+  font-size: 13.5px;
+  line-height: 1;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-search-input,
+input.table-search-input,
+input[type="search"].table-search-input {
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding-left: 38px !important; /* CRITICAL: ensures left clearance for the icon */
+  padding-right: 32px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background-color: #ffffff !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none !important;
+  }
+}
+
+.table-search-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.table-search-input::placeholder {
+  color: #94a3b8 !important;
+  font-size: 12.5px !important;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 3px 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 4px;
+  z-index: 3;
+}
+
+.search-clear-btn:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.no-records-cell {
+  text-align: center !important;
+  padding: 28px 16px !important;
+  color: #64748b !important;
+  font-size: 13.5px !important;
+  font-style: italic;
+}

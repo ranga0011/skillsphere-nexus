@@ -1,8 +1,8 @@
 :host {
   display: block;
   min-height: 100vh;
-  color: #17243a;
-  font-family: "Segoe UI", Arial, sans-serif;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
@@ -12,8 +12,8 @@
 .student-shell {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 28px;
-  background: #f5f7fb;
+  padding: 24px 28px;
+  background: #f8fafc;
 }
 
 .student-header,
@@ -21,103 +21,143 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 
 .student-header {
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .student-header h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .student-header p {
   color: #64748b;
+  margin: 4px 0 0;
+  font-size: 13.5px;
 }
 
 .eyebrow {
-  color: #285ca8 !important;
-  font-size: 12px;
+  color: #2563eb !important;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1.2px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 
 .panel {
-  margin-bottom: 20px;
-  padding: 22px;
-  background: #fff;
-  border: 1px solid #e1e7f0;
-  border-radius: 12px;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .panel h2 {
   margin-top: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .panel p {
   color: #64748b;
+  font-size: 13px;
+  margin: 4px 0 14px;
 }
 
 .form-grid,
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 12px 16px;
+  margin-bottom: 16px;
 }
 
 label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  color: #3d4f68;
-  font-size: 14px;
+  gap: 4px;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 550;
 }
 
 input,
 select {
-  min-height: 42px;
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  background: #fff;
-  color: #17243a;
-  font: inherit;
+  height: 35px !important;
+  min-height: 35px !important;
+  max-height: 35px !important;
+  padding: 5px 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px !important;
+  font-family: inherit;
+  box-sizing: border-box !important;
+  transition: all 0.15s ease;
+
+  &:focus {
+    outline: none !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  }
 }
 
 .inline-form {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: 14px;
-  margin: 18px 0;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 14px 0;
 }
 
 .inline-form label {
-  min-width: 220px;
+  min-width: 200px;
 }
 
 .primary-btn,
 .secondary-btn {
-  min-height: 40px;
-  padding: 9px 14px;
+  height: 35px !important;
+  min-height: 35px !important;
+  padding: 6px 14px;
   border: 0;
-  border-radius: 7px;
-  font: inherit;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
 }
 
 .primary-btn {
-  background: #285ca8;
-  color: white;
+  background: #2563eb;
+  color: #ffffff;
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
 }
 
 .secondary-btn {
-  background: #e8eef8;
-  color: #203e68;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
 }
 
 button:disabled {
@@ -126,19 +166,20 @@ button:disabled {
 }
 
 .framework-select {
-  max-width: 520px;
+  max-width: 480px;
 }
 
 .readiness {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  margin: 20px 0;
+  gap: 10px;
+  margin: 16px 0;
 }
 
 .readiness strong {
-  color: #285ca8;
-  font-size: 32px;
+  color: #2563eb;
+  font-size: 28px;
+  font-weight: 700;
 }
 
 .summary-grid {
@@ -146,8 +187,9 @@ button:disabled {
 }
 
 .summary-grid article {
-  padding: 14px;
-  background: #f2f5fa;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
 
@@ -157,17 +199,41 @@ button:disabled {
 }
 
 .summary-grid strong {
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .summary-grid span {
-  margin-top: 4px;
+  font-size: 12px;
   color: #64748b;
-  font-size: 13px;
+  margin-top: 2px;
 }
 
-.formula {
-  font-size: 13px;
+.status-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-pill.verified,
+.status-pill.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-pill.pending,
+.status-pill.warning {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.status-pill.rejected,
+.status-pill.danger {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .table-wrap {
@@ -182,46 +248,62 @@ table {
 
 th,
 td {
-  padding: 12px;
-  border-bottom: 1px solid #e5eaf2;
+  padding: 9px 12px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 th {
-  background: #f2f5fa;
-  color: #42536b;
-  font-size: 12px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 td {
-  font-size: 14px;
+  font-size: 13px;
+  color: #1e293b;
 }
 
 td small {
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
   color: #64748b;
+  font-size: 11.5px;
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.actions .primary-btn {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 3px 10px;
+  font-size: 12px;
 }
 
 .error-message,
 .success-message {
-  padding: 12px;
-  border-radius: 7px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 10px 0;
 }
 
 .error-message {
-  background: #fff0f0;
-  color: #a61b1b;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
 }
 
 .success-message {
-  background: #e3f7ed;
-  color: #11643f;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  color: #15803d;
 }
 
 .assessment-card,
@@ -230,70 +312,91 @@ td small {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
-  border-bottom: 1px solid #e5eaf2;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #ffffff;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  }
 }
 
 .assessment-card h3 {
   margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.assessment-card p,
+.resource-card p {
+  margin: 3px 0 4px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.assessment-card small,
+.resource-card small {
+  color: #64748b;
+  font-size: 11.5px;
 }
 
 .attempt-panel {
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: 8px;
-  background: #f2f5fa;
-}
-
-.attempt-panel fieldset {
-  margin: 14px 0;
-  padding: 14px;
+  margin-top: 16px;
+  padding: 18px;
   border: 1px solid #cbd5e1;
-  border-radius: 7px;
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
-.attempt-panel legend {
+fieldset {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+legend {
+  font-size: 13px;
   font-weight: 600;
+  color: #0f172a;
 }
 
 .answer-option {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  margin: 9px 0;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 13px;
+  cursor: pointer;
+
+  input[type="radio"] {
+    width: 16px;
+    height: 16px !important;
+    min-height: 16px !important;
+    max-height: 16px !important;
+    accent-color: #2563eb;
+    margin: 0;
+  }
 }
 
-.answer-option input {
-  min-height: auto;
+@media (max-width: 900px) {
+  .form-grid,
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.resource-card p {
-  margin: 5px 0;
-}
-
-@media (max-width: 700px) {
+@media (max-width: 600px) {
   .student-shell {
     padding: 16px;
   }
-
-  .student-header,
-  .panel-heading,
-  .assessment-card,
-  .resource-card {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .form-grid,
   .summary-grid {
     grid-template-columns: 1fr;
-  }
-
-  .panel {
-    padding: 16px;
-  }
-
-  table {
-    min-width: 650px;
   }
 }

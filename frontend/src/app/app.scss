@@ -1440,12 +1440,237 @@ td small {
   margin-bottom: 16px;
 }
 
+
 .job-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   font-size: 13px;
   color: #64748b;
   padding-top: 14px;
+  margin-top: auto;
   border-top: 1px solid #f1f5f9;
+
+  span {
+    white-space: nowrap;
+    font-size: 12.5px;
+    color: #475569;
+
+    strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+  }
+}
+
+.apply-job-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: background-color 0.15s ease !important;
+
+  &:hover {
+    background: #1d4ed8 !important;
+  }
+}
+
+/* Scoped search bar styles to guarantee component view-encapsulation safety */
+.table-search-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 10px 0 16px;
+}
+
+.search-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  pointer-events: none;
+  font-size: 13.5px;
+  line-height: 1;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-search-input {
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding-left: 38px !important;
+  padding-right: 32px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background-color: #ffffff !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none !important;
+  }
+}
+
+.table-search-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+}
+
+.table-search-input::placeholder {
+  color: #94a3b8 !important;
+  font-size: 12.5px !important;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 3px 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 4px;
+  z-index: 4;
+}
+
+.search-clear-btn:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+/* Skill Gap Analysis Enhanced Visual Elements */
+.gap-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 16px 0 20px;
+}
+
+.gap-metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+
+  .gap-metric-val {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .gap-metric-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &.readiness {
+    border-left: 4px solid #2563eb;
+    .gap-metric-val { color: #2563eb; }
+  }
+  &.matched {
+    border-left: 4px solid #10b981;
+    .gap-metric-val { color: #10b981; }
+  }
+  &.gaps {
+    border-left: 4px solid #f59e0b;
+    .gap-metric-val { color: #f59e0b; }
+  }
+  &.unverified {
+    border-left: 4px solid #6366f1;
+    .gap-metric-val { color: #6366f1; }
+  }
+}
+
+.gap-progress-container {
+  margin: 10px 0 18px;
+
+  .gap-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 6px;
+  }
+
+  .gap-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+
+    .gap-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+  }
+}
+
+.gap-controls-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+
+  .gap-control-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    select {
+      min-width: 220px;
+    }
+  }
 }

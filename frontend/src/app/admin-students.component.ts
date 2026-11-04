@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -57,11 +57,21 @@ import { Router } from '@angular/router';
           <button class="secondary-btn" type="button" (click)="loadStudents()">Refresh</button>
         </div>
         <p *ngIf="loading">Loading students...</p>
+                <div class="table-search-bar" *ngIf="!loading && students.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="studentSearch"
+            placeholder="Search students by name, email, program..."
+          />
+          <button *ngIf="studentSearch" class="search-clear-btn" (click)="studentSearch = ''">✕</button>
+        </div>
         <div class="table-wrap" *ngIf="!loading">
           <table>
             <thead><tr><th>NAME</th><th>EMAIL</th><th>PROGRAM</th></tr></thead>
             <tbody>
-              <tr *ngFor="let student of students">
+              <tr *ngFor="let student of filteredStudents">
                 <td>{{ student.name }}</td>
                 <td>{{ student.email }}</td>
                 <td>{{ student.program }}</td>
@@ -101,6 +111,17 @@ export class AdminStudentsComponent implements OnInit {
   loading = true;
   saving = false;
   errorMessage = '';
+  studentSearch = '';
+
+  get filteredStudents(): Student[] {
+    const q = this.studentSearch.trim().toLowerCase();
+    if (!q) return this.students;
+    return this.students.filter(s =>
+      (s.name && s.name.toLowerCase().includes(q)) ||
+      (s.email && s.email.toLowerCase().includes(q)) ||
+      (s.program && s.program.toLowerCase().includes(q))
+    );
+  }
   successMessage = '';
   form = { username: '', password: '', name: '', email: '', program: '' };
 

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -74,9 +74,19 @@ import { AuthService } from './auth.service';
           <label>Points<input name="points" type="number" [(ngModel)]="questionDraft.points" min="1" max="10" /></label>
           <button class="primary-btn" type="button" (click)="addQuestion()" [disabled]="saving || !selectedAssessmentId">Add question</button>
         </div>
-        <h2>Assessment bank</h2>
+                <h2>Assessment bank</h2>
+        <div class="table-search-bar" *ngIf="assessments.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="assessmentSearch"
+            placeholder="Search assessments..."
+          />
+          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">✕</button>
+        </div>
         <p *ngIf="assessments.length === 0">No assessments have been configured yet.</p>
-        <article class="list-card" *ngFor="let assessment of assessments">
+        <article class="list-card" *ngFor="let assessment of filteredAssessments">
           <div><strong>{{ assessment.title }}</strong><span>{{ assessment.skillName }} · {{ assessment.questionCount }} questions · pass {{ assessment.passPercentage }}% · {{ assessment.attemptsRemaining }} attempts shown to learners</span><small>{{ assessment.instructions }}</small></div>
           <div class="status-actions"><span class="status-pill" [class.success]="assessment.active" [class.warning]="!assessment.active">{{ assessment.active ? 'ACTIVE' : 'INACTIVE' }}</span>
             <button class="secondary-btn" type="button" (click)="toggleAssessment(assessment)">{{ assessment.active ? 'Deactivate' : 'Activate' }}</button></div>
@@ -87,8 +97,18 @@ import { AuthService } from './auth.service';
       <section class="panel" *ngIf="tab === 'users'">
         <div class="panel-heading"><div><h2>User accounts</h2><p>Deactivated accounts are blocked at login and on every authenticated API request.</p></div>
           <button class="secondary-btn" type="button" (click)="loadUsers()">Refresh</button></div>
+                <div class="table-search-bar" *ngIf="users.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="userSearch"
+            placeholder="Search users by username, role..."
+          />
+          <button *ngIf="userSearch" class="search-clear-btn" (click)="userSearch = ''">✕</button>
+        </div>
         <div class="table-wrap"><table><thead><tr><th>USERNAME</th><th>ROLE</th><th>PROFILE</th><th>STATUS</th><th>ACTION</th></tr></thead>
-          <tbody><tr *ngFor="let user of users">
+          <tbody><tr *ngFor="let user of filteredUsers">
             <td>{{ user.username }}</td><td>{{ user.role }}</td>
             <td>{{ user.studentId ? 'Student #' + user.studentId : (user.employeeId ? 'Employee #' + user.employeeId : 'Administrator') }}</td>
             <td>{{ user.enabled ? 'Active' : 'Deactivated' }}</td>
@@ -139,8 +159,18 @@ import { AuthService } from './auth.service';
           <label>Description<textarea name="resourceDescription" [(ngModel)]="resourceDraft.description" required maxlength="1000"></textarea></label>
           <button class="primary-btn" type="submit" [disabled]="resourceForm.invalid || saving">Save resource</button>
         </form>
-        <h2>Configured resources</h2>
-        <article class="list-card" *ngFor="let resource of resources">
+                <h2>Configured resources</h2>
+        <div class="table-search-bar" *ngIf="resources.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="resourceSearch"
+            placeholder="Search learning resources..."
+          />
+          <button *ngIf="resourceSearch" class="search-clear-btn" (click)="resourceSearch = ''">✕</button>
+        </div>
+        <article class="list-card" *ngFor="let resource of filteredResources">
           <div><strong>{{ resource.title }} · {{ resource.skillName }}</strong><span>{{ resource.resourceType }} · {{ resource.difficultyLevel }} · {{ resource.active ? 'Active' : 'Inactive' }}</span><small>{{ resource.description }}</small><a *ngIf="resource.verifiedUrl" [href]="resource.verifiedUrl" target="_blank" rel="noopener noreferrer">{{ resource.verifiedUrl }}</a></div>
           <button class="secondary-btn" type="button" (click)="toggleResource(resource)">{{ resource.active ? 'Deactivate' : 'Activate' }}</button>
         </article>
@@ -168,6 +198,38 @@ export class AdminLearningComponent implements OnInit {
   currentUsername = '';
   saving = false;
   error = '';
+  userSearch = '';
+  assessmentSearch = '';
+  resourceSearch = '';
+
+  get filteredUsers(): AdminUser[] {
+    const q = this.userSearch.trim().toLowerCase();
+    if (!q) return this.users;
+    return this.users.filter(u =>
+      (u.username && u.username.toLowerCase().includes(q)) ||
+      (u.role && u.role.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredAssessments(): LearnerAssessment[] {
+    const q = this.assessmentSearch.trim().toLowerCase();
+    if (!q) return this.assessments;
+    return this.assessments.filter(a =>
+      (a.title && a.title.toLowerCase().includes(q)) ||
+      (a.skillName && a.skillName.toLowerCase().includes(q)) ||
+      (a.instructions && a.instructions.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredResources(): AdminResource[] {
+    const q = this.resourceSearch.trim().toLowerCase();
+    if (!q) return this.resources;
+    return this.resources.filter(r =>
+      (r.title && r.title.toLowerCase().includes(q)) ||
+      (r.skillName && r.skillName.toLowerCase().includes(q)) ||
+      (r.description && r.description.toLowerCase().includes(q))
+    );
+  }
   success = '';
   assessmentDraft = { title: '', instructions: '', skillId: null as number | null, passPercentage: 70, maxAttempts: 3 };
   questionDraft = { prompt: '', options: ['', '', '', ''], correctOptionIndex: 0, difficulty: 'BEGINNER', points: 1 };

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -73,11 +73,21 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           </button>
         </form>
         <p *ngIf="skillsLoading">Loading your skills...</p>
+                <div class="table-search-bar" *ngIf="!skillsLoading && assignments.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="skillSearch"
+            placeholder="Search your skills..."
+          />
+          <button *ngIf="skillSearch" class="search-clear-btn" (click)="skillSearch = ''">✕</button>
+        </div>
         <div class="table-wrap" *ngIf="!skillsLoading">
           <table>
             <thead><tr><th>SKILL</th><th>SELF-REPORTED LEVEL</th><th>VERIFICATION</th></tr></thead>
             <tbody>
-              <tr *ngFor="let item of assignments">
+              <tr *ngFor="let item of filteredAssignments">
                 <td>{{ item.skill?.name || 'Skill' }}</td>
                 <td>{{ item.proficiency }}/10</td>
                 <td><span [class]="badgeClass(item.verificationStatus)">{{ item.verificationStatus }}</span></td>
@@ -167,7 +177,17 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <h2>Available assessments</h2>
         <p>Questions are scored on the server. Correct answers are not sent to your browser.</p>
         <p *ngIf="availableAssessmentsLoading">Loading available assessments...</p>
-        <div class="assessment-card" *ngFor="let assessment of availableAssessments">
+                <div class="table-search-bar" *ngIf="!availableAssessmentsLoading && availableAssessments.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="assessmentSearch"
+            placeholder="Search available assessments..."
+          />
+          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">✕</button>
+        </div>
+        <div class="assessment-card" *ngFor="let assessment of filteredAvailableAssessments">
           <div><h3>{{ assessment.title }} · {{ assessment.skillName }}</h3><p>{{ assessment.instructions }}</p>
             <small>{{ assessment.questionCount }} questions · passing score {{ assessment.passPercentage }}% · {{ assessment.attemptsRemaining }} attempt(s) remaining</small>
           </div>
@@ -226,11 +246,21 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           <button class="secondary-btn" type="button" (click)="loadCertificates()">Refresh certificates</button>
         </div>
         <p *ngIf="certificatesLoading">Loading certificates...</p>
+                <div class="table-search-bar" *ngIf="!certificatesLoading && certificates.length > 0">
+          <span class="search-input-icon">🔍</span>
+          <input
+            type="search"
+            class="table-search-input"
+            [(ngModel)]="certificateSearch"
+            placeholder="Search certificates..."
+          />
+          <button *ngIf="certificateSearch" class="search-clear-btn" (click)="certificateSearch = ''">✕</button>
+        </div>
         <div class="table-wrap" *ngIf="!certificatesLoading">
           <table>
             <thead><tr><th>SKILL</th><th>CERTIFICATE</th><th>ISSUED</th><th>STATUS</th><th>ACTION</th></tr></thead>
             <tbody>
-              <tr *ngFor="let certificate of certificates">
+              <tr *ngFor="let certificate of filteredCertificates">
                 <td>{{ certificate.skillName }}<small>{{ certificate.proficiencyLevel }}/10 verified</small></td>
                 <td>{{ certificate.certificateNumber }}<small>{{ certificate.issuerName }}</small></td>
                 <td>{{ certificate.issueDate }}</td>
@@ -282,6 +312,39 @@ export class StudentDashboardComponent implements OnInit {
   startingAssessmentId: number | null = null;
   downloadingId: number | null = null;
   errorMessage = '';
+  skillSearch = '';
+  assessmentSearch = '';
+  certificateSearch = '';
+
+  get filteredAssignments(): EmployeeSkillAssignment[] {
+    const q = this.skillSearch.trim().toLowerCase();
+    if (!q) return this.assignments;
+    return this.assignments.filter(a =>
+      (a.skill?.name && a.skill.name.toLowerCase().includes(q)) ||
+      (a.verificationStatus && a.verificationStatus.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredAvailableAssessments(): LearnerAssessment[] {
+    const q = this.assessmentSearch.trim().toLowerCase();
+    if (!q) return this.availableAssessments;
+    return this.availableAssessments.filter(a =>
+      (a.title && a.title.toLowerCase().includes(q)) ||
+      (a.skillName && a.skillName.toLowerCase().includes(q)) ||
+      (a.instructions && a.instructions.toLowerCase().includes(q))
+    );
+  }
+
+  get filteredCertificates(): IssuedCertificate[] {
+    const q = this.certificateSearch.trim().toLowerCase();
+    if (!q) return this.certificates;
+    return this.certificates.filter(c =>
+      (c.skillName && c.skillName.toLowerCase().includes(q)) ||
+      (c.certificateNumber && c.certificateNumber.toLowerCase().includes(q)) ||
+      (c.issuerName && c.issuerName.toLowerCase().includes(q)) ||
+      (c.status && c.status.toLowerCase().includes(q))
+    );
+  }
   successMessage = '';
 
   constructor(

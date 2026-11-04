@@ -12,19 +12,27 @@ import org.springframework.transaction.annotation.Transactional;
 import com.skillsphere.skill.entity.CareerPlan;
 import com.skillsphere.skill.entity.Certification;
 import com.skillsphere.skill.entity.CertificationStatus;
+import com.skillsphere.skill.entity.CompetencyFramework;
 import com.skillsphere.skill.entity.Course;
 import com.skillsphere.skill.entity.Employee;
+import com.skillsphere.skill.entity.EmployeeSkillMapping;
+import com.skillsphere.skill.entity.FrameworkSkillRequirement;
 import com.skillsphere.skill.entity.InternalJob;
 import com.skillsphere.skill.entity.LearningPath;
 import com.skillsphere.skill.entity.Skill;
+import com.skillsphere.skill.entity.SkillAssessment;
 import com.skillsphere.skill.entity.Student;
 import com.skillsphere.skill.entity.VerificationStatus;
 import com.skillsphere.skill.repository.CareerPlanRepository;
 import com.skillsphere.skill.repository.CertificationRepository;
+import com.skillsphere.skill.repository.CompetencyFrameworkRepository;
 import com.skillsphere.skill.repository.CourseRepository;
 import com.skillsphere.skill.repository.EmployeeRepository;
+import com.skillsphere.skill.repository.EmployeeSkillMappingRepository;
+import com.skillsphere.skill.repository.FrameworkSkillRequirementRepository;
 import com.skillsphere.skill.repository.InternalJobRepository;
 import com.skillsphere.skill.repository.LearningPathRepository;
+import com.skillsphere.skill.repository.SkillAssessmentRepository;
 import com.skillsphere.skill.repository.SkillRepository;
 import com.skillsphere.skill.repository.StudentRepository;
 import com.skillsphere.skill.security.AppUser;
@@ -45,6 +53,11 @@ public class EnterpriseDemoDataInitializer implements ApplicationRunner {
     private final CareerPlanRepository careerPlanRepository;
     private final CertificationRepository certificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CompetencyFrameworkRepository competencyFrameworkRepository;
+    private final FrameworkSkillRequirementRepository requirementRepository;
+    private final EmployeeSkillMappingRepository employeeSkillMappingRepository;
+    private final SkillAssessmentRepository skillAssessmentRepository;
+    private final IssuedCertificateService issuedCertificateService;
 
     public EnterpriseDemoDataInitializer(CourseRepository courseRepository,
                                          LearningPathRepository learningPathRepository,
@@ -55,7 +68,12 @@ public class EnterpriseDemoDataInitializer implements ApplicationRunner {
                                          AppUserRepository appUserRepository,
                                          CareerPlanRepository careerPlanRepository,
                                          CertificationRepository certificationRepository,
-                                         PasswordEncoder passwordEncoder) {
+                                         PasswordEncoder passwordEncoder,
+                                         CompetencyFrameworkRepository competencyFrameworkRepository,
+                                         FrameworkSkillRequirementRepository requirementRepository,
+                                         EmployeeSkillMappingRepository employeeSkillMappingRepository,
+                                         SkillAssessmentRepository skillAssessmentRepository,
+                                         IssuedCertificateService issuedCertificateService) {
         this.courseRepository = courseRepository;
         this.learningPathRepository = learningPathRepository;
         this.internalJobRepository = internalJobRepository;
@@ -66,6 +84,11 @@ public class EnterpriseDemoDataInitializer implements ApplicationRunner {
         this.careerPlanRepository = careerPlanRepository;
         this.certificationRepository = certificationRepository;
         this.passwordEncoder = passwordEncoder;
+        this.competencyFrameworkRepository = competencyFrameworkRepository;
+        this.requirementRepository = requirementRepository;
+        this.employeeSkillMappingRepository = employeeSkillMappingRepository;
+        this.skillAssessmentRepository = skillAssessmentRepository;
+        this.issuedCertificateService = issuedCertificateService;
     }
 
     @Override
@@ -187,6 +210,115 @@ public class EnterpriseDemoDataInitializer implements ApplicationRunner {
 
             AppUser studentUser = new AppUser("student@skillsphere.com", passwordEncoder.encode("student12345"), UserRole.STUDENT, null, student.getId());
             appUserRepository.save(studentUser);
+        }
+
+        // Seed Competency Frameworks & Requirements for Skill Gap Analysis
+        if (competencyFrameworkRepository.count() == 0) {
+            CompetencyFramework f1 = new CompetencyFramework(
+                "Full Stack Cloud Engineer Framework",
+                "Core competency model for enterprise full-stack cloud engineers across modern stack layers.",
+                "Senior Full Stack Engineer"
+            );
+            competencyFrameworkRepository.save(f1);
+
+            List<Skill> allSkills = skillRepository.findAll();
+            Skill javaSkill = allSkills.stream().filter(s -> s.getName().contains("Java")).findFirst().orElse(null);
+            Skill angularSkill = allSkills.stream().filter(s -> s.getName().contains("Angular")).findFirst().orElse(null);
+            Skill postgresSkill = allSkills.stream().filter(s -> s.getName().contains("PostgreSQL")).findFirst().orElse(null);
+            Skill k8sSkill = allSkills.stream().filter(s -> s.getName().contains("Kubernetes")).findFirst().orElse(null);
+
+            if (javaSkill != null) {
+                FrameworkSkillRequirement req1 = new FrameworkSkillRequirement();
+                req1.setFramework(f1);
+                req1.setSkill(javaSkill);
+                req1.setRequiredProficiency(8);
+                req1.setNotes("Virtual threads, Spring Boot 4 microservices, and security");
+                requirementRepository.save(req1);
+            }
+            if (angularSkill != null) {
+                FrameworkSkillRequirement req2 = new FrameworkSkillRequirement();
+                req2.setFramework(f1);
+                req2.setSkill(angularSkill);
+                req2.setRequiredProficiency(7);
+                req2.setNotes("Angular 20 Signals, reactive forms, and state management");
+                requirementRepository.save(req2);
+            }
+            if (postgresSkill != null) {
+                FrameworkSkillRequirement req3 = new FrameworkSkillRequirement();
+                req3.setFramework(f1);
+                req3.setSkill(postgresSkill);
+                req3.setRequiredProficiency(7);
+                req3.setNotes("Query plans, indexing, and transactional integrity");
+                requirementRepository.save(req3);
+            }
+            if (k8sSkill != null) {
+                FrameworkSkillRequirement req4 = new FrameworkSkillRequirement();
+                req4.setFramework(f1);
+                req4.setSkill(k8sSkill);
+                req4.setRequiredProficiency(6);
+                req4.setNotes("Helm charts, ingress controllers, and config maps");
+                requirementRepository.save(req4);
+            }
+
+            // Assign skills to employee Sarah Connor for live gap analysis
+            Employee emp = employeeRepository.findAll().stream().findFirst().orElse(null);
+            if (emp != null && javaSkill != null && !employeeSkillMappingRepository.existsByEmployee_IdAndSkill_Id(emp.getId(), javaSkill.getId())) {
+                EmployeeSkillMapping m1 = new EmployeeSkillMapping();
+                m1.setEmployee(emp);
+                m1.setSkill(javaSkill);
+                m1.setProficiency(8); // Matches requirement (8) -> MATCHED
+                m1.setVerificationStatus(VerificationStatus.VERIFIED);
+                m1.setAssessmentDate(LocalDate.now().minusMonths(1));
+                employeeSkillMappingRepository.save(m1);
+            }
+            if (emp != null && angularSkill != null && !employeeSkillMappingRepository.existsByEmployee_IdAndSkill_Id(emp.getId(), angularSkill.getId())) {
+                EmployeeSkillMapping m2 = new EmployeeSkillMapping();
+                m2.setEmployee(emp);
+                m2.setSkill(angularSkill);
+                m2.setProficiency(6); // 1 level below requirement (7) -> UNDER_REQUIRED (gap: 1)
+                m2.setVerificationStatus(VerificationStatus.VERIFIED);
+                m2.setAssessmentDate(LocalDate.now().minusMonths(2));
+                employeeSkillMappingRepository.save(m2);
+            }
+            if (emp != null && postgresSkill != null && !employeeSkillMappingRepository.existsByEmployee_IdAndSkill_Id(emp.getId(), postgresSkill.getId())) {
+                EmployeeSkillMapping m3 = new EmployeeSkillMapping();
+                m3.setEmployee(emp);
+                m3.setSkill(postgresSkill);
+                m3.setProficiency(7);
+                m3.setVerificationStatus(VerificationStatus.PENDING_VERIFICATION); // -> UNVERIFIED
+                m3.setAssessmentDate(LocalDate.now().minusDays(10));
+                employeeSkillMappingRepository.save(m3);
+            }
+            // k8sSkill is not assigned to Sarah Connor -> NOT_ASSIGNED (missing)
+        }
+
+        // Seed Student Verified Assessment and Achievement Certificate with Scannable QR Code
+        Student student = studentRepository.findAll().stream().findFirst().orElse(null);
+        Skill javaSkill = skillRepository.findAll().stream().filter(s -> s.getName().contains("Java")).findFirst().orElse(null);
+        if (student != null && javaSkill != null && skillAssessmentRepository.findByStudent_Id(student.getId()).isEmpty()) {
+            SkillAssessment assessment = new SkillAssessment();
+            assessment.setStudent(student);
+            assessment.setSkill(javaSkill);
+            assessment.setScore(92);
+            assessment.setMaxScore(100);
+            assessment.setAssessmentDate(LocalDate.now().minusDays(3));
+            assessment.setAssessmentMethod("Enterprise Skill MCQ Verification");
+            assessment.setVerificationStatus(VerificationStatus.VERIFIED);
+            assessment.setAssessorName("SkillSphere Certification Authority");
+            SkillAssessment savedAssessment = skillAssessmentRepository.save(assessment);
+
+            if (!employeeSkillMappingRepository.existsByStudent_IdAndSkill_Id(student.getId(), javaSkill.getId())) {
+                EmployeeSkillMapping studentMapping = new EmployeeSkillMapping();
+                studentMapping.setStudent(student);
+                studentMapping.setSkill(javaSkill);
+                studentMapping.setProficiency(9);
+                studentMapping.setVerificationStatus(VerificationStatus.VERIFIED);
+                studentMapping.setAssessmentDate(LocalDate.now().minusDays(3));
+                studentMapping.setVerifiedAssessment(savedAssessment);
+                employeeSkillMappingRepository.save(studentMapping);
+            }
+
+            issuedCertificateService.issueIfEligible(savedAssessment);
         }
     }
 }
