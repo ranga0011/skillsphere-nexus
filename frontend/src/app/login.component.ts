@@ -23,11 +23,11 @@ import { AuthService } from './auth.service';
           </div>
           <div class="form-group">
             <label for="password">Password</label>
-            <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" placeholder="••••••••" required />
+            <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" placeholder="********" required />
           </div>
           <p class="form-error" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
           <button type="submit" [disabled]="loginForm.invalid || loading">
-            {{ loading ? 'Signing in…' : 'Sign in' }}
+            {{ loading ? 'Signing in...' : 'Sign in' }}
           </button>
         </form>
       </section>

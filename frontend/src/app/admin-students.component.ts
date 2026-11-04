@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -46,7 +46,7 @@ import { Router } from '@angular/router';
           </div>
           <p class="helper">Student credentials receive only the STUDENT role. Share passwords through an approved secure channel.</p>
           <button class="primary-btn" type="submit" [disabled]="studentForm.invalid || saving">
-            {{ saving ? 'Creating…' : 'Create student account' }}
+            {{ saving ? 'Creating...' : 'Create student account' }}
           </button>
         </form>
       </section>
@@ -58,14 +58,14 @@ import { Router } from '@angular/router';
         </div>
         <p *ngIf="loading">Loading students...</p>
                 <div class="table-search-bar" *ngIf="!loading && students.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="studentSearch"
             placeholder="Search students by name, email, program..."
           />
-          <button *ngIf="studentSearch" class="search-clear-btn" (click)="studentSearch = ''">✕</button>
+          <button *ngIf="studentSearch" class="search-clear-btn" (click)="studentSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!loading">
           <table>
@@ -168,7 +168,7 @@ export class AdminStudentsComponent implements OnInit {
           const backendMessage = error.error?.message;
           this.errorMessage = typeof backendMessage === 'string' && backendMessage.trim()
             ? backendMessage
-            : 'Check that all fields are valid and the password is 12–72 UTF-8 bytes.';
+            : 'Check that all fields are valid and the password is 12-72 UTF-8 bytes.';
         } else if (error.status === 401) {
           this.errorMessage = 'Your session has expired. Sign in again as an HR administrator.';
         } else if (error.status === 403) {

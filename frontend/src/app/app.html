@@ -4,27 +4,63 @@
     <div class="sidebar-brand">
       <h2>SkillSphere <span>Nexus</span></h2>
       <span class="role-pill" [class.admin-pill]="isHrAdmin" [class.employee-pill]="isEmployee">
-        {{ isHrAdmin ? 'ðŸ›¡ï¸ HR ADMIN' : (isEmployee ? 'ðŸ’¼ EMPLOYEE' : 'ðŸŽ“ STUDENT') }}
+        {{ isHrAdmin ? 'HR ADMIN' : (isEmployee ? 'EMPLOYEE' : 'STUDENT') }}
       </span>
     </div>
 
     <p class="nav-label">{{ isHrAdmin ? 'ADMINISTRATION' : 'MY WORKSPACE' }}</p>
 
-    <button class="nav-item" [class.active]="currentPage === 'dashboard'" (click)="currentPage = 'dashboard'"> â–¦ &nbsp; {{ isHrAdmin ? 'Executive Dashboard' : 'My Dashboard' }} </button>
-    <button *ngIf="isHrAdmin" class="nav-item" [class.active]="currentPage === 'employees'" (click)="currentPage = 'employees'"> â™™ &nbsp; Employees </button>
-    <button *ngIf="isHrAdmin" class="nav-item" type="button" (click)="goToStudentAccounts()"> â™§ &nbsp; Students </button>
-    <button *ngIf="isHrAdmin" class="nav-item" type="button" (click)="goToAdminLearning()"> â–¤ &nbsp; Learning & Analytics </button>
-    <button *ngIf="isHrAdmin" class="nav-item portal-switch-btn" type="button" (click)="goToStudentPortal()"> ðŸŽ“ &nbsp; Student Portal View </button>
+    <button class="nav-item" [class.active]="currentPage === 'dashboard'" (click)="currentPage = 'dashboard'">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      <span>{{ isHrAdmin ? 'Executive Dashboard' : 'My Dashboard' }}</span>
+    </button>
+    <button *ngIf="isHrAdmin" class="nav-item" [class.active]="currentPage === 'employees'" (click)="currentPage = 'employees'">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Employees</span>
+    </button>
+    <button *ngIf="isHrAdmin" class="nav-item" type="button" (click)="goToStudentAccounts()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      <span>Students</span>
+    </button>
+    <button *ngIf="isHrAdmin" class="nav-item" type="button" (click)="goToAdminLearning()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Learning &amp; Analytics</span>
+    </button>
+    <button *ngIf="isHrAdmin" class="nav-item portal-switch-btn" type="button" (click)="goToStudentPortal()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      <span>Student Portal View</span>
+    </button>
 
     <p class="nav-label">{{ isHrAdmin ? 'TALENT & LEARNING' : 'SKILLS & PROGRESS' }}</p>
 
-    <button class="nav-item" [class.active]="currentPage === 'skills'" (click)="currentPage = 'skills'; loadSkills()"> â—‡ &nbsp; Skill Catalog </button>
-    <button class="nav-item" [class.active]="currentPage === 'mappings'" (click)="currentPage = 'mappings'; loadEmployeeSkillAssignments()"> âŽ‡ &nbsp; {{ isHrAdmin ? 'Employee Skills' : 'My Skills' }} </button>
-    <button class="nav-item" [class.active]="currentPage === 'assessments'" (click)="currentPage = 'assessments'; loadAssessments()"> â–¤ &nbsp; {{ isHrAdmin ? 'Assessments' : 'My Assessments' }} </button>
-    <button class="nav-item" [class.active]="currentPage === 'courses'" (click)="currentPage = 'courses'; loadCourses(); loadLearningPaths()"> ðŸ“š &nbsp; Courses & LMS </button>
-    <button class="nav-item" [class.active]="currentPage === 'certifications'" (click)="currentPage = 'certifications'; loadCertifications(); loadComplianceSummary()"> âœ§ &nbsp; {{ isHrAdmin ? 'Certifications & Compliance' : 'My Certifications' }} </button>
-    <button class="nav-item" [class.active]="currentPage === 'career'" (click)="currentPage = 'career'; loadMyCareerPlan(); loadInternalJobs()"> ðŸš€ &nbsp; Career & Jobs </button>
-    <button class="nav-item" [class.active]="currentPage === 'frameworks'" (click)="currentPage = 'frameworks'; loadFrameworks()"> â—Œ &nbsp; Frameworks </button>
+    <button class="nav-item" [class.active]="currentPage === 'skills'" (click)="currentPage = 'skills'; loadSkills()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Skill Catalog</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'mappings'" (click)="currentPage = 'mappings'; loadEmployeeSkillAssignments()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>{{ isHrAdmin ? 'Employee Skills' : 'My Skills' }}</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'assessments'" (click)="currentPage = 'assessments'; loadAssessments()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>{{ isHrAdmin ? 'Assessments' : 'My Assessments' }}</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'courses'" (click)="currentPage = 'courses'; loadCourses(); loadLearningPaths()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span>Courses &amp; LMS</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'certifications'" (click)="currentPage = 'certifications'; loadCertifications(); loadComplianceSummary()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+      <span>{{ isHrAdmin ? 'Certifications &amp; Compliance' : 'My Certifications' }}</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'career'" (click)="currentPage = 'career'; loadMyCareerPlan(); loadInternalJobs()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Career &amp; Jobs</span>
+    </button>
+    <button class="nav-item" [class.active]="currentPage === 'frameworks'" (click)="currentPage = 'frameworks'; loadFrameworks()">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="8.5" y="14" width="7" height="7"/><line x1="6.5" y1="10" x2="6.5" y2="12"/><line x1="17.5" y1="10" x2="17.5" y2="12"/><line x1="6.5" y1="12" x2="17.5" y2="12"/><line x1="12" y1="12" x2="12" y2="14"/></svg>
+      <span>Frameworks</span>
+    </button>
 
     <div class="sidebar-footer">
       <div class="user-meta">
@@ -46,40 +82,59 @@
         <!-- Notification Center -->
         <div class="notification-container">
           <button class="bell-btn" type="button" (click)="toggleNotificationPopover()" aria-label="Notifications">
-            ðŸ””
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;display:block;">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
             <span class="bell-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
           </button>
 
           <!-- Notification Dropdown Popover -->
           <div class="notification-dropdown" *ngIf="showNotifications">
             <div class="notif-header">
-              <span class="notif-title">Compliance & Learning Alerts</span>
-              <button class="notif-read-btn" type="button" (click)="markAllNotificationsRead()">Mark read</button>
+              <span class="notif-title">Compliance &amp; Learning Alerts</span>
+              <button class="notif-read-btn" type="button" (click)="markAllNotificationsRead()" [disabled]="unreadNotificationCount === 0">
+                {{ unreadNotificationCount === 0 ? 'All read' : 'Mark read' }}
+              </button>
             </div>
             <div class="notif-list">
-              <div class="notif-item alert-warning" *ngIf="hasExpiringCerts">
-                <div class="notif-icon">âš ï¸</div>
-                <div class="notif-info">
-                  <p class="notif-lead">Certification Expiry Notice</p>
-                  <p class="notif-desc">CKA: Certified Kubernetes Administrator expires in 18 days. Urgent renewal required to maintain team compliance.</p>
-                  <span class="notif-tag">Notification: Sent &middot; Milestone 3 Expiry Tracking</span>
+              <div
+                *ngFor="let notif of activeNotifications"
+                class="notif-item alert-{{ notif.type }}"
+                [class.is-read]="notif.isRead"
+                [class.is-unread]="!notif.isRead"
+                (click)="toggleNotificationRead(notif.id)"
+              >
+                <div class="notif-icon">
+                  <span *ngIf="notif.type === 'warning'" style="color:#d97706;font-weight:bold;">!</span>
+                  <span *ngIf="notif.type === 'info'" style="color:#2563eb;font-weight:bold;">i</span>
+                  <span *ngIf="notif.type === 'success'" style="color:#059669;font-weight:bold;">&#10003;</span>
                 </div>
+                <div class="notif-info">
+                  <div class="notif-row">
+                    <p class="notif-lead">{{ notif.title }}</p>
+                    <span class="notif-time">{{ notif.time }}</span>
+                  </div>
+                  <p class="notif-desc">{{ notif.description }}</p>
+                  <div class="notif-bottom-row">
+                    <span class="notif-tag">{{ notif.tag }}</span>
+                    <button
+                      *ngIf="!notif.isRead"
+                      class="notif-single-action"
+                      type="button"
+                      (click)="markNotificationRead(notif.id, $event)"
+                      title="Mark as read"
+                    >
+                      &#10003; Mark read
+                    </button>
+                    <span *ngIf="notif.isRead" class="notif-read-badge">&#10003; Read</span>
+                  </div>
+                </div>
+                <span class="notif-unread-dot" *ngIf="!notif.isRead" title="Unread notification"></span>
               </div>
-              <div class="notif-item alert-info" *ngIf="isHrAdmin">
-                <div class="notif-icon">ðŸ“‹</div>
-                <div class="notif-info">
-                  <p class="notif-lead">Audit Queue Pending</p>
-                  <p class="notif-desc">Self-reported skill assessments and employee certifications awaiting HR administrative verification.</p>
-                  <span class="notif-tag">Action: Review Required</span>
-                </div>
-              </div>
-              <div class="notif-item alert-success">
-                <div class="notif-icon">âœ“</div>
-                <div class="notif-info">
-                  <p class="notif-lead">LMS Learning Sync</p>
-                  <p class="notif-desc">Course progress and competency frameworks synchronised with enterprise catalog.</p>
-                  <span class="notif-tag">Status: Validated</span>
-                </div>
+
+              <div class="notif-item is-read" *ngIf="activeNotifications.length === 0" style="text-align:center;justify-content:center;padding:24px 16px;">
+                <p style="margin:0;color:#64748b;font-size:13px;">All caught up! No active notifications.</p>
               </div>
             </div>
           </div>
@@ -105,16 +160,16 @@
       <!-- KPI Executive Metrics -->
       <section class="stats kpi-grid">
         <article class="stat-card kpi-card">
-          <div class="kpi-icon-wrap icon-blue">ðŸ‘¥</div>
+          <div class="kpi-icon-wrap icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <div>
             <p>Employees & Learners</p>
             <h2>{{ isHrAdmin ? (employees.length > 0 ? employees.length : '12.4K') : (employees[0]?.name || 'Learner') }}</h2>
-            <span class="kpi-trend positive">â†‘ 98% profile completion</span>
+            <span class="kpi-trend positive">+ 98% profile completion</span>
           </div>
         </article>
 
         <article class="stat-card kpi-card">
-          <div class="kpi-icon-wrap icon-emerald">â­</div>
+          <div class="kpi-icon-wrap icon-emerald"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
           <div>
             <p>Skills Tracked</p>
             <h2>{{ skills.length > 0 ? skills.length : '2,847' }}</h2>
@@ -123,7 +178,7 @@
         </article>
 
         <article class="stat-card kpi-card">
-          <div class="kpi-icon-wrap icon-purple">ðŸ“š</div>
+          <div class="kpi-icon-wrap icon-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
           <div>
             <p>Courses & Learning</p>
             <h2>{{ courses.length > 0 ? courses.length : '847' }}</h2>
@@ -132,7 +187,7 @@
         </article>
 
         <article class="stat-card kpi-card">
-          <div class="kpi-icon-wrap icon-amber">ðŸŽ–ï¸</div>
+          <div class="kpi-icon-wrap icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg></div>
           <div>
             <p>Active Certifications</p>
             <h2>{{ complianceSummary ? complianceSummary.activeCount : '8.4K' }}</h2>
@@ -271,7 +326,7 @@
       <!-- Quick Action Navigation Panels -->
       <section class="dashboard-action-panels">
         <article class="action-panel-card">
-          <div class="action-icon">ðŸš€</div>
+          <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
           <div>
             <h4>Course Catalog & Learning Management</h4>
             <p>Explore online courses, workshops, webinars, and track learning progress.</p>
@@ -280,7 +335,7 @@
         </article>
 
         <article class="action-panel-card">
-          <div class="action-icon">ðŸŽ¯</div>
+          <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
           <div>
             <h4>Career Development & Internal Jobs</h4>
             <p>Plan role transitions, review promotion criteria, and explore internal job matches.</p>
@@ -356,14 +411,14 @@
         <p *ngIf="loading">Loading employees...</p>
 
                 <div class="table-search-bar" *ngIf="!loading && employees.length > 0">
-          <span class="search-input-icon">ðŸ”</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="employeeSearch"
             placeholder="Search employees by name, title, department..."
           />
-          <button *ngIf="employeeSearch" class="search-clear-btn" (click)="employeeSearch = ''">âœ•</button>
+          <button *ngIf="employeeSearch" class="search-clear-btn" (click)="employeeSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!loading">
           <table>
@@ -460,14 +515,14 @@
         </div>
         <p *ngIf="skillsLoading">Loading skills...</p>
                 <div class="table-search-bar" *ngIf="!skillsLoading && skills.length > 0">
-          <span class="search-input-icon">ðŸ”</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="skillSearch"
             placeholder="Search skills by name, category, description..."
           />
-          <button *ngIf="skillSearch" class="search-clear-btn" (click)="skillSearch = ''">âœ•</button>
+          <button *ngIf="skillSearch" class="search-clear-btn" (click)="skillSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!skillsLoading">
           <table>
@@ -483,7 +538,7 @@
               <tr *ngFor="let item of filteredSkills">
                 <td><strong>{{ item.name }}</strong></td>
                 <td>{{ item.category }}</td>
-                <td>{{ item.description || 'â€”' }}</td>
+                <td>{{ item.description || '-' }}</td>
                 <td class="actions">
                   <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditSkillForm(item)">Edit</button>
                   <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteSkill(item)">Delete</button>
@@ -499,7 +554,7 @@
     <section *ngIf="currentPage === 'mappings'">
       <header class="topbar">
         <div>
-          <h1>Employeeâ€“Skill Mapping</h1>
+          <h1>Employee-Skill Mapping</h1>
           <p>Assign skills, update proficiency and verification states.</p>
         </div>
         <button *ngIf="isHrAdmin" class="primary-btn" (click)="openAddAssignmentForm()">+ Add Assignment</button>
@@ -575,7 +630,7 @@
                 <td>{{ item.skill?.name ?? 'Unknown skill' }}</td>
                 <td>{{ item.proficiency }}/10</td>
                 <td><span [class]="getBadgeClass(item.verificationStatus)">{{ item.verificationStatus }}</span></td>
-                <td>{{ item.assessmentDate || 'â€”' }}</td>
+                <td>{{ item.assessmentDate || '-' }}</td>
                 <td class="actions">
                   <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditAssignmentForm(item)">Edit</button>
                   <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteAssignment(item)">Remove</button>
@@ -743,7 +798,7 @@
               <tr *ngFor="let item of filteredFrameworks">
                 <td>{{ item.name }}</td>
                 <td>{{ item.roleTitle }}</td>
-                <td>{{ item.description || 'â€”' }}</td>
+                <td>{{ item.description || '-' }}</td>
                 <td class="actions">
                   <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditFrameworkForm(item)">Edit</button>
                   <button class="secondary-btn" (click)="selectFramework(item.id ?? null)">View</button>
@@ -798,7 +853,7 @@
             <tr *ngFor="let requirement of frameworkRequirements">
               <td>{{ requirement.skill?.name ?? 'Unknown skill' }}</td>
               <td>{{ requirement.requiredProficiency }}/10</td>
-              <td>{{ requirement.notes || 'â€”' }}</td>
+              <td>{{ requirement.notes || '-' }}</td>
               <td class="actions">
                 <button *ngIf="isHrAdmin" class="edit-btn" (click)="openEditRequirementForm(requirement)">Edit</button>
                 <button *ngIf="isHrAdmin" class="delete-btn" (click)="deleteRequirement(requirement)">Delete</button>
@@ -832,7 +887,7 @@
             <tr *ngFor="let gap of gapReport">
               <td>{{ gap.skillName }}</td>
               <td>{{ gap.requiredProficiency }}/10</td>
-              <td>{{ gap.employeeProficiency ?? 'â€”' }}</td>
+              <td>{{ gap.employeeProficiency ?? '-' }}</td>
               <td>{{ gap.gap }}</td>
               <td><span [class]="getBadgeClass(gap.status)">{{ gap.status }}</span></td>
             </tr>
@@ -864,14 +919,14 @@
         </div>
         <p *ngIf="achievementCertificateLoading">Loading achievement certificates...</p>
                 <div class="table-search-bar" *ngIf="!achievementCertificateLoading && achievementCertificates.length > 0">
-          <span class="search-input-icon">ðŸ”</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="certificateSearch"
             placeholder="Search certificates by recipient, skill, cert number..."
           />
-          <button *ngIf="certificateSearch" class="search-clear-btn" (click)="certificateSearch = ''">âœ•</button>
+          <button *ngIf="certificateSearch" class="search-clear-btn" (click)="certificateSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!achievementCertificateLoading">
           <table>
@@ -895,7 +950,7 @@
                 <td class="actions">
                   <button class="primary-btn" type="button" (click)="downloadAchievementCertificate(item)"
                     [disabled]="downloadingAchievementId === item.id || item.status !== 'ISSUED'">
-                    {{ downloadingAchievementId === item.id ? 'Downloadingâ€¦' : 'Download PDF' }}
+                    {{ downloadingAchievementId === item.id ? 'Downloading...' : 'Download PDF' }}
                   </button>
                   <button *ngIf="isHrAdmin && item.status === 'ISSUED'" class="delete-btn" type="button"
                     (click)="revokeAchievementCertificate(item)">Revoke</button>
@@ -1014,7 +1069,7 @@
                 <td>{{ item.expiryDate || 'No expiry' }}</td>
                 <td><span [class]="getBadgeClass(item.status)">{{ item.status ?? 'ACTIVE' }}</span></td>
                 <td class="actions">
-                  <button class="renew-btn" type="button" (click)="renewCertificationRecord(item.id)">â†» Renew</button>
+                  <button class="renew-btn" type="button" (click)="renewCertificationRecord(item.id)">Renew Renew</button>
                   <button class="edit-btn" (click)="openEditCertificationForm(item)">Edit</button>
                   <button class="delete-btn" (click)="deleteCertification(item)">Delete</button>
                 </td>
@@ -1061,8 +1116,8 @@
             <h3>{{ path.title }}</h3>
             <p>{{ path.description }}</p>
             <div class="path-meta">
-              <span>ðŸŽ¯ Target: <strong>{{ path.targetRole }}</strong></span>
-              <span>ðŸ“š {{ path.totalCourses }} Courses</span>
+              <span>Target: <strong>{{ path.targetRole }}</strong></span>
+              <span>{{ path.totalCourses }} Courses</span>
             </div>
             <div class="path-progress-wrap">
               <div class="progress-bar-bg">
@@ -1128,27 +1183,27 @@
         </div>
 
         <div class="table-search-bar" *ngIf="courses.length > 0">
-          <span class="search-input-icon">ðŸ”</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="courseSearch"
             placeholder="Search courses by title, category, instructor..."
           />
-          <button *ngIf="courseSearch" class="search-clear-btn" (click)="courseSearch = ''">âœ•</button>
+          <button *ngIf="courseSearch" class="search-clear-btn" (click)="courseSearch = ''">&times;</button>
         </div>
         <div class="courses-grid">
           <div *ngFor="let c of filteredCourses" class="course-card">
             <div class="course-top">
               <span class="course-type-pill" [class.bootcamp]="c.courseType === 'BOOTCAMP'" [class.workshop]="c.courseType === 'WORKSHOP'">{{ c.courseType }}</span>
-              <span class="course-rating">â˜… {{ c.rating }}</span>
+              <span class="course-rating">&#9733; {{ c.rating }}</span>
             </div>
             <h3>{{ c.title }}</h3>
             <p class="course-desc">{{ c.description }}</p>
             <div class="course-details">
-              <span>â± {{ c.durationHours }} Hours</span>
-              <span>ðŸ‘¤ {{ c.instructor }}</span>
-              <span>ðŸ‘¥ {{ c.totalEnrolled }} Enrolled</span>
+              <span>Duration: {{ c.durationHours }} Hours</span>
+              <span>Instructor: {{ c.instructor }}</span>
+              <span>Enrolled: {{ c.totalEnrolled }} Enrolled</span>
             </div>
 
             <!-- Enrollment status / actions -->
@@ -1194,7 +1249,7 @@
           <div class="roadmap-header">
             <div>
               <span class="status-pill success">ACTIVE CAREER TRACK</span>
-              <h2>{{ careerPlan.currentRole }} â†’ {{ careerPlan.targetRole }}</h2>
+              <h2>{{ careerPlan.currentRole }} &rarr; {{ careerPlan.targetRole }}</h2>
               <p>Mentor: <strong>{{ careerPlan.mentorName }}</strong> | Skill Gaps: <span class="gap-text">{{ careerPlan.skillGaps }}</span></p>
             </div>
             <div class="readiness-score-box">
@@ -1207,7 +1262,7 @@
           <!-- Visual Step-by-Step Roadmap -->
           <div class="roadmap-timeline">
             <div class="timeline-step completed">
-              <div class="step-circle">âœ“</div>
+              <div class="step-circle">&#10003;</div>
               <span class="step-role">{{ careerPlan.currentRole }}</span>
               <span class="step-status">Current Position</span>
             </div>
@@ -1271,20 +1326,20 @@
         </div>
 
         <div class="table-search-bar" *ngIf="internalJobs.length > 0">
-          <span class="search-input-icon">ðŸ”</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="jobSearch"
             placeholder="Search internal jobs by role, department, skills..."
           />
-          <button *ngIf="jobSearch" class="search-clear-btn" (click)="jobSearch = ''">âœ•</button>
+          <button *ngIf="jobSearch" class="search-clear-btn" (click)="jobSearch = ''">&times;</button>
         </div>
         <div class="jobs-grid">
           <div *ngFor="let job of filteredJobs" class="job-card">
             <div class="job-card-top">
               <span class="status-pill neutral">{{ job.department }}</span>
-              <span class="match-badge">â­ 85% Skill Match</span>
+              <span class="match-badge">&#9733; 85% Skill Match</span>
             </div>
             <h3>{{ job.title }}</h3>
             <p class="job-desc">{{ job.description }}</p>
@@ -1294,7 +1349,7 @@
             <div class="job-footer">
               <span>Openings: <strong>{{ job.openingsCount }}</strong></span>
               <div *ngIf="hasApplied(job.id); else applyBtnBlock">
-                <span class="status-pill success">âœ“ Applied</span>
+                <span class="status-pill success">&#10003; Applied</span>
               </div>
               <ng-template #applyBtnBlock>
                 <button class="primary-btn apply-job-btn" (click)="applyForJob(job.id)">Apply Now</button>

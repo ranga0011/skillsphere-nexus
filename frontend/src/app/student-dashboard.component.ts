@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,7 +19,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
     <main class="student-shell">
       <header class="student-header">
         <div>
-          <p class="eyebrow">SKILLSPHERE NEXUS · STUDENT</p>
+          <p class="eyebrow">SKILLSPHERE NEXUS - STUDENT</p>
           <h1>Your learning workspace</h1>
           <p>Track verified skills, assessments, competency gaps, and certificates.</p>
         </div>
@@ -45,7 +45,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
             </label>
           </div>
           <button class="primary-btn" type="submit" [disabled]="profileForm.invalid || profileSaving">
-            {{ profileSaving ? 'Saving…' : 'Update profile' }}
+            {{ profileSaving ? 'Saving...' : 'Update profile' }}
           </button>
         </form>
       </section>
@@ -65,23 +65,23 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
               <option *ngFor="let skill of skills" [ngValue]="skill.id">{{ skill.name }}</option>
             </select>
           </label>
-          <label>Self-reported proficiency (1–10)
+          <label>Self-reported proficiency (1-10)
             <input type="number" name="proficiency" min="1" max="10" [(ngModel)]="proficiency" required />
           </label>
           <button class="primary-btn" type="submit" [disabled]="skillForm.invalid || skillSaving">
-            {{ skillSaving ? 'Requesting…' : 'Request skill' }}
+            {{ skillSaving ? 'Requesting...' : 'Request skill' }}
           </button>
         </form>
         <p *ngIf="skillsLoading">Loading your skills...</p>
                 <div class="table-search-bar" *ngIf="!skillsLoading && assignments.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="skillSearch"
             placeholder="Search your skills..."
           />
-          <button *ngIf="skillSearch" class="search-clear-btn" (click)="skillSearch = ''">✕</button>
+          <button *ngIf="skillSearch" class="search-clear-btn" (click)="skillSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!skillsLoading">
           <table>
@@ -104,7 +104,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <label class="framework-select">Target role or framework
           <select name="framework" [(ngModel)]="frameworkId" (ngModelChange)="loadGapReport()" [disabled]="frameworks.length === 0">
             <option [ngValue]="null">Select a framework</option>
-            <option *ngFor="let framework of frameworks" [ngValue]="framework.id">{{ framework.roleTitle }} — {{ framework.name }}</option>
+            <option *ngFor="let framework of frameworks" [ngValue]="framework.id">{{ framework.roleTitle }} - {{ framework.name }}</option>
           </select>
         </label>
         <p *ngIf="gapLoading">Calculating your report...</p>
@@ -126,7 +126,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
               <tbody>
                 <tr *ngFor="let gap of report.skills">
                   <td>{{ gap.skillName }}</td>
-                  <td>{{ gap.employeeProficiency ?? '—' }}</td>
+                  <td>{{ gap.employeeProficiency ?? '-' }}</td>
                   <td>{{ gap.requiredProficiency }}/10</td>
                   <td>{{ gap.gap }}</td>
                   <td>{{ gap.status }}</td>
@@ -178,26 +178,26 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <p>Questions are scored on the server. Correct answers are not sent to your browser.</p>
         <p *ngIf="availableAssessmentsLoading">Loading available assessments...</p>
                 <div class="table-search-bar" *ngIf="!availableAssessmentsLoading && availableAssessments.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="assessmentSearch"
             placeholder="Search available assessments..."
           />
-          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">✕</button>
+          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">&times;</button>
         </div>
         <div class="assessment-card" *ngFor="let assessment of filteredAvailableAssessments">
-          <div><h3>{{ assessment.title }} · {{ assessment.skillName }}</h3><p>{{ assessment.instructions }}</p>
-            <small>{{ assessment.questionCount }} questions · passing score {{ assessment.passPercentage }}% · {{ assessment.attemptsRemaining }} attempt(s) remaining</small>
+          <div><h3>{{ assessment.title }} - {{ assessment.skillName }}</h3><p>{{ assessment.instructions }}</p>
+            <small>{{ assessment.questionCount }} questions - passing score {{ assessment.passPercentage }}% - {{ assessment.attemptsRemaining }} attempt(s) remaining</small>
           </div>
           <button class="primary-btn" type="button" (click)="startAssessment(assessment)" [disabled]="startingAssessmentId === assessment.id">
-            {{ startingAssessmentId === assessment.id ? 'Starting…' : 'Start assessment' }}
+            {{ startingAssessmentId === assessment.id ? 'Starting...' : 'Start assessment' }}
           </button>
         </div>
         <p *ngIf="!availableAssessmentsLoading && availableAssessments.length === 0">No active assessments are available for your profile right now.</p>
         <div class="attempt-panel" *ngIf="activeAttempt as attempt">
-          <h3>{{ attempt.assessment.title }} · Attempt {{ attempt.attemptNumber }}</h3>
+          <h3>{{ attempt.assessment.title }} - Attempt {{ attempt.attemptNumber }}</h3>
           <p>{{ attempt.assessment.instructions }}</p>
           <fieldset *ngFor="let question of attempt.questions; let questionNumber = index">
             <legend>{{ questionNumber + 1 }}. {{ question.prompt }} ({{ question.points }} point(s), {{ question.difficulty | lowercase }})</legend>
@@ -207,7 +207,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
             </label>
           </fieldset>
           <button class="primary-btn" type="button" (click)="submitAssessment()" [disabled]="submittingAssessment || !allQuestionsAnswered(attempt)">
-            {{ submittingAssessment ? 'Submitting…' : 'Submit answers' }}
+            {{ submittingAssessment ? 'Submitting...' : 'Submit answers' }}
           </button>
         </div>
       </section>
@@ -216,7 +216,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <h2>Latest assessment result</h2>
         <p class="success-message" *ngIf="result.passed">Passed with {{ result.percentage }}% (required {{ result.passPercentage }}%).</p>
         <p *ngIf="!result.passed">Not passed: {{ result.percentage }}% (required {{ result.passPercentage }}%). You may use any remaining attempts.</p>
-        <p>Score {{ result.scorePoints }}/{{ result.maxPoints }} · submitted {{ result.submittedAt }}</p>
+        <p>Score {{ result.scorePoints }}/{{ result.maxPoints }} - submitted {{ result.submittedAt }}</p>
         <button class="primary-btn" type="button" *ngIf="result.certificate" (click)="download(result.certificate)">
           Download {{ result.certificate.certificateNumber }} PDF
         </button>
@@ -227,9 +227,9 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <h2>Resources for your selected skill gaps</h2>
         <p *ngIf="recommendationsLoading">Finding configured resources for your gaps...</p>
         <div class="resource-card" *ngFor="let recommendation of recommendations">
-          <div><strong>{{ recommendation.resource.title }} · {{ recommendation.resource.skillName }}</strong>
+          <div><strong>{{ recommendation.resource.title }} - {{ recommendation.resource.skillName }}</strong>
             <p>{{ recommendation.resource.description }}</p>
-            <small>Gap {{ recommendation.priorityGap }} level(s) · current {{ recommendation.currentVerifiedProficiency }}/10 · required {{ recommendation.requiredProficiency }}/10 · {{ recommendation.resource.resourceType }} · {{ recommendation.resource.difficultyLevel }}</small>
+            <small>Gap {{ recommendation.priorityGap }} level(s) - current {{ recommendation.currentVerifiedProficiency }}/10 - required {{ recommendation.requiredProficiency }}/10 - {{ recommendation.resource.resourceType }} - {{ recommendation.resource.difficultyLevel }}</small>
           </div>
           <a *ngIf="recommendation.resource.verifiedUrl" [href]="recommendation.resource.verifiedUrl" target="_blank" rel="noopener noreferrer">Open resource</a>
         </div>
@@ -247,14 +247,14 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         </div>
         <p *ngIf="certificatesLoading">Loading certificates...</p>
                 <div class="table-search-bar" *ngIf="!certificatesLoading && certificates.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="certificateSearch"
             placeholder="Search certificates..."
           />
-          <button *ngIf="certificateSearch" class="search-clear-btn" (click)="certificateSearch = ''">✕</button>
+          <button *ngIf="certificateSearch" class="search-clear-btn" (click)="certificateSearch = ''">&times;</button>
         </div>
         <div class="table-wrap" *ngIf="!certificatesLoading">
           <table>
@@ -267,7 +267,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
                 <td>{{ certificate.status }}</td>
                 <td class="actions">
                   <button class="primary-btn" type="button" (click)="download(certificate)" [disabled]="downloadingId === certificate.id || certificate.status !== 'ISSUED'">
-                    {{ downloadingId === certificate.id ? 'Downloading…' : 'Download PDF' }}
+                    {{ downloadingId === certificate.id ? 'Downloading...' : 'Download PDF' }}
                   </button>
                   <a [href]="verificationUrl(certificate)" target="_blank" rel="noopener">Verify</a>
                 </td>

@@ -1,4 +1,4 @@
-﻿import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,7 +18,7 @@ import { AuthService } from './auth.service';
     <main class="admin-learning">
       <header class="page-heading">
         <div>
-          <p class="eyebrow">SKILLSPHERE NEXUS · ADMINISTRATION</p>
+          <p class="eyebrow">SKILLSPHERE NEXUS - ADMINISTRATION</p>
           <h1>Learning and account management</h1>
           <p>Manage learner assessments, accounts, resources, and organization-level skill gaps.</p>
         </div>
@@ -76,18 +76,18 @@ import { AuthService } from './auth.service';
         </div>
                 <h2>Assessment bank</h2>
         <div class="table-search-bar" *ngIf="assessments.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="assessmentSearch"
             placeholder="Search assessments..."
           />
-          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">✕</button>
+          <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">&times;</button>
         </div>
         <p *ngIf="assessments.length === 0">No assessments have been configured yet.</p>
         <article class="list-card" *ngFor="let assessment of filteredAssessments">
-          <div><strong>{{ assessment.title }}</strong><span>{{ assessment.skillName }} · {{ assessment.questionCount }} questions · pass {{ assessment.passPercentage }}% · {{ assessment.attemptsRemaining }} attempts shown to learners</span><small>{{ assessment.instructions }}</small></div>
+          <div><strong>{{ assessment.title }}</strong><span>{{ assessment.skillName }} - {{ assessment.questionCount }} questions - pass {{ assessment.passPercentage }}% - {{ assessment.attemptsRemaining }} attempts shown to learners</span><small>{{ assessment.instructions }}</small></div>
           <div class="status-actions"><span class="status-pill" [class.success]="assessment.active" [class.warning]="!assessment.active">{{ assessment.active ? 'ACTIVE' : 'INACTIVE' }}</span>
             <button class="secondary-btn" type="button" (click)="toggleAssessment(assessment)">{{ assessment.active ? 'Deactivate' : 'Activate' }}</button></div>
         </article>
@@ -98,14 +98,14 @@ import { AuthService } from './auth.service';
         <div class="panel-heading"><div><h2>User accounts</h2><p>Deactivated accounts are blocked at login and on every authenticated API request.</p></div>
           <button class="secondary-btn" type="button" (click)="loadUsers()">Refresh</button></div>
                 <div class="table-search-bar" *ngIf="users.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="userSearch"
             placeholder="Search users by username, role..."
           />
-          <button *ngIf="userSearch" class="search-clear-btn" (click)="userSearch = ''">✕</button>
+          <button *ngIf="userSearch" class="search-clear-btn" (click)="userSearch = ''">&times;</button>
         </div>
         <div class="table-wrap"><table><thead><tr><th>USERNAME</th><th>ROLE</th><th>PROFILE</th><th>STATUS</th><th>ACTION</th></tr></thead>
           <tbody><tr *ngFor="let user of filteredUsers">
@@ -139,7 +139,7 @@ import { AuthService } from './auth.service';
             <tbody><tr *ngFor="let item of report.skills"><td>{{ item.skillName }} ({{ item.requiredProficiency }}/10)</td><td>{{ item.learnersWithGap }}</td><td>{{ item.learnersWithGapPercentage | number:'1.0-1' }}%</td><td>{{ item.totalGapLevels }}</td><td>{{ item.awaitingAssessment }}</td><td>{{ item.awaitingVerification }}</td></tr>
               <tr *ngIf="report.skills.length === 0"><td colspan="6">No matching skill gaps for this filter.</td></tr>
             </tbody></table></div>
-          <div class="pagination"><button type="button" class="secondary-btn" (click)="changeAnalyticsPage(-1)" [disabled]="analyticsPage === 0">Previous</button><span>Page {{ analyticsPage + 1 }} · {{ report.totalSkillEntries }} skills in filter</span><button type="button" class="secondary-btn" (click)="changeAnalyticsPage(1)" [disabled]="(analyticsPage + 1) * report.size >= report.totalSkillEntries">Next</button></div>
+          <div class="pagination"><button type="button" class="secondary-btn" (click)="changeAnalyticsPage(-1)" [disabled]="analyticsPage === 0">Previous</button><span>Page {{ analyticsPage + 1 }} - {{ report.totalSkillEntries }} skills in filter</span><button type="button" class="secondary-btn" (click)="changeAnalyticsPage(1)" [disabled]="(analyticsPage + 1) * report.size >= report.totalSkillEntries">Next</button></div>
           <p>Gap percentages use all employee and student profiles as the denominator. Readiness requires verified proficiency at or above every framework skill level.</p>
         </ng-container>
         <p *ngIf="analyticsFrameworkId === null">Select a framework to load administrative aggregate reports.</p>
@@ -161,17 +161,17 @@ import { AuthService } from './auth.service';
         </form>
                 <h2>Configured resources</h2>
         <div class="table-search-bar" *ngIf="resources.length > 0">
-          <span class="search-input-icon">🔍</span>
+          <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
             class="table-search-input"
             [(ngModel)]="resourceSearch"
             placeholder="Search learning resources..."
           />
-          <button *ngIf="resourceSearch" class="search-clear-btn" (click)="resourceSearch = ''">✕</button>
+          <button *ngIf="resourceSearch" class="search-clear-btn" (click)="resourceSearch = ''">&times;</button>
         </div>
         <article class="list-card" *ngFor="let resource of filteredResources">
-          <div><strong>{{ resource.title }} · {{ resource.skillName }}</strong><span>{{ resource.resourceType }} · {{ resource.difficultyLevel }} · {{ resource.active ? 'Active' : 'Inactive' }}</span><small>{{ resource.description }}</small><a *ngIf="resource.verifiedUrl" [href]="resource.verifiedUrl" target="_blank" rel="noopener noreferrer">{{ resource.verifiedUrl }}</a></div>
+          <div><strong>{{ resource.title }} - {{ resource.skillName }}</strong><span>{{ resource.resourceType }} - {{ resource.difficultyLevel }} - {{ resource.active ? 'Active' : 'Inactive' }}</span><small>{{ resource.description }}</small><a *ngIf="resource.verifiedUrl" [href]="resource.verifiedUrl" target="_blank" rel="noopener noreferrer">{{ resource.verifiedUrl }}</a></div>
           <button class="secondary-btn" type="button" (click)="toggleResource(resource)">{{ resource.active ? 'Deactivate' : 'Activate' }}</button>
         </article>
         <p *ngIf="resources.length === 0">No resources configured yet; learners will be told when a gap has no matching resource.</p>

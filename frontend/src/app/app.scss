@@ -103,27 +103,38 @@
 
 /* Navigation buttons: explicitly reset browser defaults */
 .sidebar .nav-item {
-  display: block;
+  display: flex !important;
+  align-items: center !important;
+  gap: 11px !important;
   width: 100%;
-  min-height: 44px;
-  padding: 13px 12px;
-  margin: 7px 0;
+  min-height: 40px;
+  padding: 9px 12px;
+  margin: 4px 0;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: #e0e8f4 !important;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 500;
   line-height: 1.4;
   text-align: left;
   text-decoration: none;
-  white-space: normal;
+  white-space: nowrap;
   opacity: 1;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
   transition: background-color 0.2s ease, color 0.2s ease;
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 }
 
 .sidebar .nav-item:hover {
@@ -1815,4 +1826,12 @@ td small {
       min-width: 220px;
     }
   }
+}
+
+
+.search-svg {
+  width: 15px;
+  height: 15px;
+  stroke: #64748b;
+  display: block;
 }
