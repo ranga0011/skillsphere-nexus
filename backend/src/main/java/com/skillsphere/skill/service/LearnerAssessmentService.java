@@ -312,14 +312,33 @@ public class LearnerAssessmentService {
                     ? "SMTP Error: " + email.getStatus()
                     : "Live Gmail delivery requires Google App Password in application-local.properties");
 
-        return new AttemptResult(attempt.getId(), attempt.getAssessment().getId(),
-                attempt.getAssessment().getTitle(), attempt.getStatus(), attempt.getStartedAt(),
-                attempt.getSubmittedAt(), attempt.getAttemptNumber(), attempt.getScorePoints() == null
-                        ? 0 : attempt.getScorePoints(),
-                attempt.getMaxPoints() == null ? 0 : attempt.getMaxPoints(),
-                attempt.getPercentage() == null ? 0 : attempt.getPercentage(), attempt.isPassed(),
-                attempt.getAssessment().getPassPercentage(), certificate,
-                emailDispatched, recipient, subject, preview, emailStatus, emailMessage);
+        int scorePoints = attempt.getScorePoints() == null ? 0 : attempt.getScorePoints();
+        int maxPoints = attempt.getMaxPoints() == null ? 0 : attempt.getMaxPoints();
+        int percentage = attempt.getPercentage() == null
+                ? (maxPoints > 0 ? (int) Math.floor(scorePoints * 100.0 / maxPoints) : 0)
+                : attempt.getPercentage();
+
+        return new AttemptResult(
+                attempt.getId(),
+                attempt.getAssessment().getId(),
+                attempt.getAssessment().getTitle(),
+                attempt.getStatus(),
+                attempt.getStartedAt(),
+                attempt.getSubmittedAt(),
+                attempt.getAttemptNumber(),
+                scorePoints,
+                maxPoints,
+                percentage,
+                attempt.isPassed(),
+                attempt.getAssessment().getPassPercentage(),
+                certificate,
+                emailDispatched,
+                recipient,
+                subject,
+                preview,
+                emailStatus,
+                emailMessage
+        );
     }
 
     private long attemptCount(Long assessmentId, Long employeeId, Long studentId) {

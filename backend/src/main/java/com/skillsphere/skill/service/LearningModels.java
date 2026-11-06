@@ -86,6 +86,18 @@ public final class LearningModels {
             String emailStatus, String emailDeliveryMessage) {
         public AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
                 LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
+                int scorePoints, int maxPoints, boolean passed, int passPercentage,
+                IssuedCertificateView certificate,
+                boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview,
+                String emailStatus, String emailDeliveryMessage) {
+            this(attemptId, assessmentId, assessmentTitle, status, startedAt, submittedAt, attemptNumber,
+                    scorePoints, maxPoints,
+                    maxPoints > 0 ? (int) Math.floor(scorePoints * 100.0 / maxPoints) : 0,
+                    passed, passPercentage, certificate,
+                    emailDispatched, emailRecipient, emailSubject, emailBodyPreview, emailStatus, emailDeliveryMessage);
+        }
+        public AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
+                LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
                 int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
                 IssuedCertificateView certificate,
                 boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview) {
