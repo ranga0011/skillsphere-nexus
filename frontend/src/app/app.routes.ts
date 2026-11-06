@@ -12,7 +12,7 @@ export const routes: Routes = [
 	{ path: 'hr/students', component: AdminStudentsComponent, canActivate: [authGuard, roleGuard], data: { roles: ['HR_ADMIN'] } },
 	{ path: 'hr/learning', component: AdminLearningComponent, canActivate: [authGuard, roleGuard], data: { roles: ['HR_ADMIN'] } },
 	{ path: 'employee', pathMatch: 'full', component: WorkspaceComponent, canActivate: [authGuard, roleGuard], data: { roles: ['EMPLOYEE'] } },
-	{ path: 'student', component: StudentDashboardComponent, canActivate: [authGuard, roleGuard], data: { roles: ['STUDENT'] } },
+	{ path: 'student', component: StudentDashboardComponent, canActivate: [authGuard, roleGuard], data: { roles: ['STUDENT', 'HR_ADMIN'] } },
 	{ path: '', pathMatch: 'full', component: WorkspaceComponent, canActivate: [homeGuard] },
 	{ path: '**', redirectTo: '' }
 ];

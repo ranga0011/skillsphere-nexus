@@ -7,21 +7,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.skillsphere.skill.entity.AssessmentDefinition;
+import com.skillsphere.skill.entity.AssessmentDifficulty;
 import com.skillsphere.skill.entity.AssessmentQuestion;
+import com.skillsphere.skill.entity.LearningResource;
 import com.skillsphere.skill.entity.Skill;
 import com.skillsphere.skill.repository.AssessmentDefinitionRepository;
 import com.skillsphere.skill.repository.AssessmentQuestionRepository;
 import com.skillsphere.skill.repository.LearnerAssessmentAttemptRepository;
+import com.skillsphere.skill.repository.LearningResourceRepository;
 import com.skillsphere.skill.repository.SkillRepository;
 import com.skillsphere.skill.service.LearningModels.AssessmentRequest;
 import com.skillsphere.skill.service.LearningModels.AssessmentView;
+import com.skillsphere.skill.service.LearningModels.CreateAssessmentWithQuestionsRequest;
 import com.skillsphere.skill.service.LearningModels.LearningResourceRequest;
 import com.skillsphere.skill.service.LearningModels.LearningResourceView;
 import com.skillsphere.skill.service.LearningModels.QuestionRequest;
 import com.skillsphere.skill.service.LearningModels.QuestionView;
 import com.skillsphere.skill.service.LearningModels.ResourceRecommendation;
-import com.skillsphere.skill.entity.LearningResource;
-import com.skillsphere.skill.repository.LearningResourceRepository;
 import com.skillsphere.skill.service.exception.ResourceNotFoundException;
 
 @Service
@@ -53,6 +55,44 @@ public class QuestionBankService {
         AssessmentDefinition assessment = new AssessmentDefinition();
         populateAssessment(assessment, request);
         return assessmentView(assessmentRepository.save(assessment), null);
+    }
+
+    public AssessmentView createAssessmentWithQuestions(CreateAssessmentWithQuestionsRequest request) {
+        if (request == null || request.title() == null || request.title().isBlank()
+                || request.instructions() == null || request.instructions().isBlank()
+                || request.skillId() == null || request.skillId() <= 0
+                || request.passPercentage() == null || request.passPercentage() < 1 || request.passPercentage() > 100
+                || request.maxAttempts() == null || request.maxAttempts() < 1 || request.maxAttempts() > 10) {
+            throw new IllegalArgumentException("Valid assessment details (title, instructions, skill, pass percentage, attempts) are required");
+        }
+        Skill skill = skillRepository.findById(request.skillId())
+                .orElseThrow(() -> new ResourceNotFoundException("Skill not found: " + request.skillId()));
+
+        AssessmentDefinition assessment = new AssessmentDefinition();
+        assessment.setTitle(request.title().trim());
+        assessment.setInstructions(request.instructions().trim());
+        assessment.setSkill(skill);
+        assessment.setPassPercentage(request.passPercentage());
+        assessment.setMaxAttempts(request.maxAttempts());
+        assessment.setActive(request.active() == null || request.active());
+        assessment.setCourseId(request.courseId());
+        assessment.setCourseTitle(request.courseTitle() != null ? request.courseTitle().trim() : null);
+        AssessmentDefinition saved = assessmentRepository.save(assessment);
+
+        if (request.questions() != null) {
+            for (QuestionRequest qReq : request.questions()) {
+                validateQuestion(qReq);
+                AssessmentQuestion question = new AssessmentQuestion();
+                question.setAssessment(saved);
+                question.setPrompt(qReq.prompt().trim());
+                question.setOptions(qReq.options().stream().map(String::trim).toList());
+                question.setCorrectOptionIndex(qReq.correctOptionIndex());
+                question.setDifficulty(qReq.difficulty() != null ? qReq.difficulty() : AssessmentDifficulty.INTERMEDIATE);
+                question.setPoints(qReq.points() == null ? 1 : qReq.points());
+                questionRepository.save(question);
+            }
+        }
+        return assessmentView(saved, null);
     }
 
     public AssessmentView updateAssessment(Long id, AssessmentRequest request) {
@@ -179,6 +219,8 @@ public class QuestionBankService {
         assessment.setPassPercentage(request.passPercentage());
         assessment.setMaxAttempts(request.maxAttempts());
         assessment.setActive(request.active() == null || request.active());
+        assessment.setCourseId(request.courseId());
+        assessment.setCourseTitle(request.courseTitle() != null ? request.courseTitle().trim() : null);
     }
 
     private void validateAssessment(AssessmentRequest request) {
@@ -212,7 +254,8 @@ public class QuestionBankService {
         int questionCount = questionRepository.findByAssessment_IdOrderById(assessment.getId()).size();
         return new AssessmentView(assessment.getId(), assessment.getTitle(), assessment.getInstructions(),
                 assessment.getSkill().getId(), assessment.getSkill().getName(), assessment.getPassPercentage(),
-                assessment.getMaxAttempts(), assessment.isActive(), questionCount, attemptsRemaining);
+                assessment.getMaxAttempts(), assessment.isActive(), questionCount, attemptsRemaining,
+                assessment.getCourseId(), assessment.getCourseTitle());
     }
 
     private QuestionView questionView(AssessmentQuestion question) {

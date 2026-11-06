@@ -55,6 +55,12 @@ public class AssessmentDefinition {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "course_id")
+    private Long courseId;
+
+    @Column(name = "course_title", length = 200)
+    private String courseTitle;
+
     @OneToMany(mappedBy = "assessment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AssessmentQuestion> questions = new ArrayList<>();
 
@@ -74,5 +80,9 @@ public class AssessmentDefinition {
     public void setMaxAttempts(int maxAttempts) { this.maxAttempts = maxAttempts; }
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+    public Long getCourseId() { return courseId; }
+    public void setCourseId(Long courseId) { this.courseId = courseId; }
+    public String getCourseTitle() { return courseTitle; }
+    public void setCourseTitle(String courseTitle) { this.courseTitle = courseTitle; }
     public List<AssessmentQuestion> getQuestions() { return questions; }
 }

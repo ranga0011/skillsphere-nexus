@@ -16,7 +16,33 @@ public final class LearningModels {
     }
 
     public record AssessmentRequest(String title, String instructions, Long skillId,
-            Integer passPercentage, Integer maxAttempts, Boolean active) {
+            Integer passPercentage, Integer maxAttempts, Boolean active, Long courseId, String courseTitle) {
+        public AssessmentRequest(String title, String instructions, Long skillId,
+                Integer passPercentage, Integer maxAttempts, Boolean active) {
+            this(title, instructions, skillId, passPercentage, maxAttempts, active, null, null);
+        }
+    }
+
+    public record CreateAssessmentWithQuestionsRequest(
+            String title,
+            String instructions,
+            Long skillId,
+            Long courseId,
+            String courseTitle,
+            Integer passPercentage,
+            Integer maxAttempts,
+            Boolean active,
+            List<QuestionRequest> questions
+    ) {
+    }
+
+    public record AiGenerateQuestionsRequest(
+            Long courseId,
+            String courseTitle,
+            String courseDescription,
+            String courseCategory,
+            Integer questionCount
+    ) {
     }
 
     public record QuestionView(Long id, String prompt, List<String> options,
@@ -25,7 +51,13 @@ public final class LearningModels {
 
     public record AssessmentView(Long id, String title, String instructions, Long skillId,
             String skillName, int passPercentage, int maxAttempts, boolean active, int questionCount,
-            Integer attemptsRemaining) {
+            Integer attemptsRemaining, Long courseId, String courseTitle) {
+        public AssessmentView(Long id, String title, String instructions, Long skillId,
+                String skillName, int passPercentage, int maxAttempts, boolean active, int questionCount,
+                Integer attemptsRemaining) {
+            this(id, title, instructions, skillId, skillName, passPercentage, maxAttempts, active,
+                    questionCount, attemptsRemaining, null, null);
+        }
     }
 
     public record StartedAttempt(Long attemptId, int attemptNumber, Instant startedAt,
@@ -41,7 +73,36 @@ public final class LearningModels {
     public record AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
             LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
             int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
-            IssuedCertificateView certificate) {
+            IssuedCertificateView certificate,
+            boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview) {
+        public AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
+                LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
+                int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
+                IssuedCertificateView certificate) {
+            this(attemptId, assessmentId, assessmentTitle, status, startedAt, submittedAt, attemptNumber,
+                    scorePoints, maxPoints, percentage, passed, passPercentage, certificate,
+                    false, null, null, null);
+        }
+    }
+
+    public record ScorecardEmailView(
+            Long id,
+            Long attemptId,
+            Long assessmentId,
+            String assessmentTitle,
+            Long studentId,
+            Long employeeId,
+            String recipientEmail,
+            String recipientName,
+            int scorePoints,
+            int maxPoints,
+            int percentage,
+            boolean passed,
+            String subject,
+            String bodyText,
+            String status,
+            Instant sentAt
+    ) {
     }
 
     public record UserAccountView(Long id, String username, String role, Long employeeId,

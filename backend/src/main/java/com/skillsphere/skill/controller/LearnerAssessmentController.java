@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.skillsphere.skill.security.JwtService;
+import com.skillsphere.skill.service.AssessmentEmailService;
 import com.skillsphere.skill.service.LearnerAssessmentService;
 import com.skillsphere.skill.service.LearningModels.AssessmentView;
 import com.skillsphere.skill.service.LearningModels.AttemptResult;
+import com.skillsphere.skill.service.LearningModels.ScorecardEmailView;
 import com.skillsphere.skill.service.LearningModels.StartedAttempt;
 import com.skillsphere.skill.service.LearningModels.SubmitAttemptRequest;
 
@@ -23,9 +25,12 @@ import com.skillsphere.skill.service.LearningModels.SubmitAttemptRequest;
 @RequestMapping("/api/learning")
 public class LearnerAssessmentController {
     private final LearnerAssessmentService assessmentService;
+    private final AssessmentEmailService emailService;
 
-    public LearnerAssessmentController(LearnerAssessmentService assessmentService) {
+    public LearnerAssessmentController(LearnerAssessmentService assessmentService,
+            AssessmentEmailService emailService) {
         this.assessmentService = assessmentService;
+        this.emailService = emailService;
     }
 
     @GetMapping("/assessments")
@@ -51,6 +56,15 @@ public class LearnerAssessmentController {
     public List<AttemptResult> history(@AuthenticationPrincipal Jwt jwt) {
         Learner owner = owner(jwt);
         return assessmentService.history(owner.employeeId(), owner.studentId());
+    }
+
+    @GetMapping("/my-scorecard-emails")
+    public List<ScorecardEmailView> getMyScorecardEmails(@AuthenticationPrincipal Jwt jwt) {
+        Learner owner = owner(jwt);
+        if (owner.studentId() != null) {
+            return emailService.getEmailsForStudent(owner.studentId());
+        }
+        return emailService.getEmailsForEmployee(owner.employeeId());
     }
 
     private Learner owner(Jwt jwt) {

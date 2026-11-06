@@ -24,6 +24,8 @@ export interface Assessment {
   assessmentMethod: string;
   verificationStatus?: string;
   assessorName?: string;
+  courseId?: number;
+  courseTitle?: string;
   employee?: { id?: number; name?: string; email?: string };
   student?: { id?: number; name?: string; email?: string };
   skill?: Skill;
@@ -196,4 +198,49 @@ export interface JobApplication {
   appliedAt: string;
   matchPercentage: number;
   status: string;
+}
+
+export interface ScorecardEmail {
+  id: number;
+  attemptId: number;
+  assessmentId: number;
+  assessmentTitle: string;
+  studentId?: number;
+  employeeId?: number;
+  recipientEmail: string;
+  recipientName?: string;
+  scorePoints: number;
+  maxPoints: number;
+  percentage: number;
+  passed: boolean;
+  subject: string;
+  bodyText: string;
+  status: string;
+  sentAt: string;
+}
+
+export interface AiGenerateQuestionsRequest {
+  courseId: number;
+  courseTitle?: string;
+  courseDescription?: string;
+  courseCategory?: string;
+  questionCount: number;
+}
+
+export interface CreateAssessmentWithQuestionsRequest {
+  title: string;
+  instructions: string;
+  skillId: number;
+  courseId?: number;
+  courseTitle?: string;
+  passPercentage: number;
+  maxAttempts: number;
+  active?: boolean;
+  questions: Array<{
+    prompt: string;
+    options: string[];
+    correctOptionIndex: number;
+    difficulty: string;
+    points: number;
+  }>;
 }

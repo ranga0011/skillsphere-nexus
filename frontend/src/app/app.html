@@ -1469,7 +1469,10 @@
           <h1>Learning Management & Courses</h1>
           <p>Online courses, bootcamps, workshops, webinars, and structured learning paths.</p>
         </div>
-        <button *ngIf="isHrAdmin" class="primary-btn" (click)="showCourseForm = !showCourseForm">+ Add Course</button>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button *ngIf="isHrAdmin" class="secondary-btn" style="background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; font-weight: 600;" (click)="openAiAssignmentModal()">+ AI Create Course Assignment</button>
+          <button *ngIf="isHrAdmin" class="primary-btn" (click)="showCourseForm = !showCourseForm">+ Add Course</button>
+        </div>
       </header>
 
       <section class="stats">
@@ -1587,6 +1590,13 @@
               <span>Enrolled: {{ c.totalEnrolled }} Enrolled</span>
             </div>
 
+            <!-- HR AI Assignment Action -->
+            <div class="course-hr-actions" *ngIf="isHrAdmin" style="margin-top: 10px; margin-bottom: 6px;">
+              <button class="secondary-btn btn-sm" style="width: 100%; background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; font-weight: 600;" (click)="openAiAssignmentModal(c)">
+                + Create AI Assignment
+              </button>
+            </div>
+
             <!-- Enrollment status / actions -->
             <div class="course-actions-area">
               <div *ngIf="isEnrolled(c.id); else notEnrolledBlock" class="enrolled-controls">
@@ -1609,6 +1619,105 @@
           </div>
         </div>
       </section>
+    
+      <!-- AI Course Assignment Creator Modal -->
+      <div class="modal-backdrop" *ngIf="showAiAssignmentModal" (click)="closeAiAssignmentModal()">
+        <div class="modal-content ai-assignment-modal" (click)="$event.stopPropagation()" style="max-width: 780px;">
+          <div class="modal-header">
+            <div>
+              <span class="modal-eyebrow">AUTOMATED LMS INTELLIGENCE</span>
+              <h2>AI Course Assignment & Assessment Creator</h2>
+              <p>Select a course, specify question count, and let AI generate relevant multiple-choice questions.</p>
+            </div>
+            <button class="modal-close-btn" (click)="closeAiAssignmentModal()">&times;</button>
+          </div>
+
+          <div class="modal-body">
+            <p class="error-message" *ngIf="aiAssignmentError">{{ aiAssignmentError }}</p>
+
+            <div class="form-grid">
+              <label>
+                Target Course
+                <select [(ngModel)]="aiSelectedCourseId" (ngModelChange)="onAiCourseChange()">
+                  <option *ngFor="let course of courses" [ngValue]="course.id">{{ course.title }} ({{ course.category }})</option>
+                </select>
+              </label>
+
+              <label>
+                Number of AI Questions
+                <input type="number" min="1" max="15" [(ngModel)]="aiQuestionCount" (ngModelChange)="onAiQuestionCountChange()" />
+              </label>
+
+              <label>
+                Skill Category
+                <select [(ngModel)]="aiSelectedSkillId">
+                  <option *ngFor="let skill of skills" [ngValue]="skill.id">{{ skill.name }}</option>
+                </select>
+              </label>
+
+              <label>
+                Pass Percentage (%)
+                <input type="number" min="1" max="100" [(ngModel)]="aiPassPercentage" />
+              </label>
+
+              <label>
+                Max Attempts
+                <input type="number" min="1" max="10" [(ngModel)]="aiMaxAttempts" />
+              </label>
+
+              <label class="col-span-2">
+                Assignment Title
+                <input [(ngModel)]="aiAssignmentTitle" />
+              </label>
+            </div>
+
+            <label class="full-width-label" style="margin-top: 10px;">
+              Instructions for Students
+              <textarea [(ngModel)]="aiAssignmentInstructions" rows="2" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 13px;"></textarea>
+            </label>
+
+            <div class="ai-generator-action-bar" style="margin: 14px 0; display: flex; align-items: center; gap: 12px;">
+              <button type="button" class="primary-btn" (click)="triggerAiQuestionGeneration()" [disabled]="isGeneratingAiQuestions || !aiSelectedCourseId" style="background: #4f46e5;">
+                <span *ngIf="!isGeneratingAiQuestions"> Generate {{ aiQuestionCount }} Questions with AI</span>
+                <span *ngIf="isGeneratingAiQuestions">Generating Questions...</span>
+              </button>
+              <span class="ai-status-hint" *ngIf="aiGeneratedQuestions.length > 0" style="color: #166534; font-weight: 600; font-size: 13px;">
+                [OK] {{ aiGeneratedQuestions.length }} questions generated for {{ getCourseTitle(aiSelectedCourseId) }}
+              </span>
+            </div>
+
+            <!-- Review Generated Questions List -->
+            <div class="generated-questions-review" *ngIf="aiGeneratedQuestions.length > 0" style="margin-top: 14px;">
+              <h3 style="font-size: 15px; margin-bottom: 8px;">Generated Assessment Questions ({{ aiGeneratedQuestions.length }})</h3>
+              <div *ngFor="let q of aiGeneratedQuestions; let qIdx = index" class="q-review-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                <div class="q-review-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <span class="q-num" style="font-weight: 700; color: #4f46e5;">Q{{ qIdx + 1 }}.</span>
+                  <span class="q-prompt" style="flex: 1; font-weight: 600; font-size: 13px;">{{ q.prompt }}</span>
+                  <span class="status-pill" style="font-size: 10px;">{{ q.difficulty }}</span>
+                  <span class="q-points" style="font-size: 11px; color: #64748b;">{{ q.points }} pt</span>
+                  <button type="button" class="search-clear-btn" (click)="removeAiQuestion(qIdx)" title="Remove question">&times;</button>
+                </div>
+                <div class="q-options-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px;">
+                  <div *ngFor="let opt of q.options; let optIdx = index" class="q-opt-pill" [style.background]="optIdx === q.correctOptionIndex ? '#dcfce7' : '#ffffff'" [style.border]="optIdx === q.correctOptionIndex ? '1px solid #86efac' : '1px solid #e2e8f0'" style="padding: 6px 10px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                    <span style="font-weight: 700;" [style.color]="optIdx === q.correctOptionIndex ? '#15803d' : '#64748b'">{{ optIdx === q.correctOptionIndex ? '[OK]' : '&bull;' }}</span>
+                    <span style="flex: 1;">{{ opt }}</span>
+                    <span *ngIf="optIdx === q.correctOptionIndex" style="background: #15803d; color: #ffffff; font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: 700;">CORRECT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 16px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+            <button class="secondary-btn" (click)="closeAiAssignmentModal()">Cancel</button>
+            <button class="primary-btn publish-assignment-btn" (click)="publishAiAssignment()" [disabled]="isPublishingAssignment || aiGeneratedQuestions.length === 0" style="background: #16a34a;">
+              <span *ngIf="!isPublishingAssignment"> Publish Assignment for Students ({{ aiGeneratedQuestions.length }} Questions)</span>
+              <span *ngIf="isPublishingAssignment">Publishing...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- Career Planning & Internal Job Portal Section -->

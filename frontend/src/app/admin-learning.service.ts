@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { AssessmentQuestion, LearnerAssessment } from './learning.service';
+import { CreateAssessmentWithQuestionsRequest, ScorecardEmail } from './feature-models';
 
 export interface AdminUser {
   id: number;
@@ -94,8 +95,25 @@ export class AdminLearningService {
     passPercentage: number;
     maxAttempts: number;
     active?: boolean;
+    courseId?: number;
+    courseTitle?: string;
   }): Observable<LearnerAssessment> {
     return this.http.post<LearnerAssessment>(`${this.adminUrl}/learning/assessments`, payload);
+  }
+
+  createAssessmentWithQuestions(payload: CreateAssessmentWithQuestionsRequest): Observable<LearnerAssessment> {
+    return this.http.post<LearnerAssessment>(`${this.adminUrl}/learning/assessments/with-questions`, payload);
+  }
+
+  aiGenerateQuestions(courseId: number, questionCount: number): Observable<any[]> {
+    return this.http.post<any[]>(`${this.adminUrl}/learning/ai-generate-questions`, {
+      courseId,
+      questionCount
+    });
+  }
+
+  getScorecardEmails(): Observable<ScorecardEmail[]> {
+    return this.http.get<ScorecardEmail[]>(`${this.adminUrl}/learning/scorecard-emails`);
   }
 
   updateAssessment(id: number, payload: {
@@ -105,6 +123,8 @@ export class AdminLearningService {
     passPercentage: number;
     maxAttempts: number;
     active: boolean;
+    courseId?: number;
+    courseTitle?: string;
   }): Observable<LearnerAssessment> {
     return this.http.put<LearnerAssessment>(`${this.adminUrl}/learning/assessments/${id}`, payload);
   }

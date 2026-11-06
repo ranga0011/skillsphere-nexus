@@ -5,7 +5,8 @@ import { Router } from '@angular/router';
 import { FrameworkService } from './framework.service';
 import { SkillService } from './skill.service';
 import { Skill } from './skill';
-import { CompetencyFramework } from './feature-models';
+import { CompetencyFramework, Course, ScorecardEmail } from './feature-models';
+import { CourseService } from './course.service';
 import { AdminLearningService, AdminResource, AdminUser, GapAnalytics, ResourcePayload } from './admin-learning.service';
 import { LearnerAssessment } from './learning.service';
 import { AuthService } from './auth.service';
@@ -29,6 +30,7 @@ import { AuthService } from './auth.service';
         <button type="button" [class.active]="tab === 'users'" (click)="tab = 'users'">User accounts</button>
         <button type="button" [class.active]="tab === 'analytics'" (click)="tab = 'analytics'">Gap analytics</button>
         <button type="button" [class.active]="tab === 'resources'" (click)="tab = 'resources'">Learning resources</button>
+        <button type="button" [class.active]="tab === 'emails'" (click)="tab = 'emails'; loadScorecardEmails()">Dispatched Scorecards</button>
       </nav>
       <p class="error-message" role="alert" *ngIf="error">{{ error }}</p>
       <p class="success-message" role="status" *ngIf="success">{{ success }}</p>
@@ -36,6 +38,29 @@ import { AuthService } from './auth.service';
       <section class="panel" *ngIf="tab === 'assessments'">
         <h2>Create an assessment</h2>
         <form #assessmentForm="ngForm" (ngSubmit)="createAssessment()">
+          
+          <div class="ai-course-generator-box">
+            <div class="ai-box-badge">AI COURSE ASSIGNMENT INTELLIGENCE</div>
+            <div class="form-grid">
+              <label>Link Course (For Automated AI Question Generation)
+                <select name="aiCourseSelect" [(ngModel)]="aiCourseId" (ngModelChange)="onAiCourseChange()">
+                  <option [ngValue]="null">-- Select a Course to Generate Relevant Questions --</option>
+                  <option *ngFor="let course of courses" [ngValue]="course.id">{{ course.title }} ({{ course.category }})</option>
+                </select>
+              </label>
+              <label>Number of AI Questions
+                <input type="number" name="aiCount" min="1" max="15" [(ngModel)]="aiQuestionCount" />
+              </label>
+              <div class="ai-gen-btn-wrap">
+                <button type="button" class="secondary-btn ai-btn" (click)="generateAiQuestions()" [disabled]="!aiCourseId || generatingAiQuestions">
+                  {{ generatingAiQuestions ? 'Generating Questions...' : ' AI Generate Course Questions' }}
+                </button>
+              </div>
+            </div>
+            <p class="ai-hint-txt" *ngIf="aiGeneratedQuestions.length > 0">
+              [OK] {{ aiGeneratedQuestions.length }} questions ready. Clicking 'Create assessment' will publish them all immediately.
+            </p>
+          </div>
           <div class="form-grid">
             <label>Title<input name="title" [(ngModel)]="assessmentDraft.title" required maxlength="150" /></label>
             <label>Skill
@@ -50,6 +75,22 @@ import { AuthService } from './auth.service';
           <label>Instructions<textarea name="instructions" [(ngModel)]="assessmentDraft.instructions" required maxlength="1000"></textarea></label>
           <button class="primary-btn" type="submit" [disabled]="assessmentForm.invalid || saving">Create assessment</button>
         </form>
+        
+        <div class="ai-review-container" *ngIf="aiGeneratedQuestions.length > 0">
+          <h3>AI Generated Questions for Assessment ({{ aiGeneratedQuestions.length }})</h3>
+          <div *ngFor="let q of aiGeneratedQuestions; let qIdx = index" class="ai-q-card">
+            <div class="ai-q-head">
+              <strong>Q{{ qIdx + 1 }}. {{ q.prompt }}</strong>
+              <span class="status-pill">{{ q.difficulty }}</span>
+              <button type="button" class="search-clear-btn" (click)="removeAiQuestion(qIdx)">&times;</button>
+            </div>
+            <div class="ai-q-opts">
+              <span *ngFor="let opt of q.options; let optIdx = index" class="ai-opt-chip" [class.correct]="optIdx === q.correctOptionIndex">
+                {{ optIdx === q.correctOptionIndex ? '[OK] ' : '' }}{{ opt }}
+              </span>
+            </div>
+          </div>
+        </div>
         <div class="form-grid question-maker" *ngIf="assessments.length">
           <label>Assessment
             <select name="questionAssessment" [(ngModel)]="selectedAssessmentId" (ngModelChange)="loadQuestions()">
@@ -176,12 +217,71 @@ import { AuthService } from './auth.service';
         </article>
         <p *ngIf="resources.length === 0">No resources configured yet; learners will be told when a gap has no matching resource.</p>
       </section>
+    
+      <section class="panel" *ngIf="tab === 'emails'">
+        <div class="panel-heading">
+          <div>
+            <h2>Dispatched Scorecard Emails</h2>
+            <p>Official grade notifications sent automatically to students and employees upon submitting assessments.</p>
+          </div>
+          <button class="secondary-btn" type="button" (click)="loadScorecardEmails()">Refresh Emails</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>RECIPIENT</th>
+                <th>ASSESSMENT</th>
+                <th>MARKS</th>
+                <th>PERCENTAGE</th>
+                <th>STATUS</th>
+                <th>SENT DATE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let email of scorecardEmails">
+                <td><strong>{{ email.recipientName || 'Learner' }}</strong><br/><small>{{ email.recipientEmail }}</small></td>
+                <td>{{ email.assessmentTitle }}</td>
+                <td>{{ email.scorePoints }} / {{ email.maxPoints }}</td>
+                <td>{{ email.percentage }}%</td>
+                <td><span class="status-pill" [class.success]="email.passed" [class.warning]="!email.passed">{{ email.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
+                <td>{{ email.sentAt | date:'short' }}</td>
+                <td><button class="secondary-btn btn-sm" type="button" (click)="activeEmailModal = email">View Email</button></td>
+              </tr>
+              <tr *ngIf="scorecardEmails.length === 0">
+                <td colspan="7">No scorecard emails dispatched yet. Complete assessments in the student or employee portal to see email logs.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Scorecard Email Preview Modal -->
+      <div class="modal-backdrop" *ngIf="activeEmailModal" (click)="activeEmailModal = null">
+        <div class="modal-content scorecard-email-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <span class="modal-eyebrow">DISPATCHED SCORECARD EMAIL AUDIT</span>
+              <h3>{{ activeEmailModal.subject }}</h3>
+              <p>Sent to: <strong>{{ activeEmailModal.recipientEmail }}</strong> &bull; {{ activeEmailModal.sentAt | date:'medium' }}</p>
+            </div>
+            <button class="modal-close-btn" (click)="activeEmailModal = null">&times;</button>
+          </div>
+          <div class="modal-body">
+            <pre class="email-raw-body">{{ activeEmailModal.bodyText }}</pre>
+          </div>
+          <div class="modal-footer">
+            <button class="primary-btn" (click)="activeEmailModal = null">Close</button>
+          </div>
+        </div>
+      </div>
     </main>
   `,
   styleUrl: './admin-learning.component.scss'
 })
 export class AdminLearningComponent implements OnInit {
-  tab: 'assessments' | 'users' | 'analytics' | 'resources' = 'assessments';
+  tab: 'assessments' | 'users' | 'analytics' | 'resources' | 'emails' = 'assessments';
   skills: Skill[] = [];
   frameworks: CompetencyFramework[] = [];
   assessments: LearnerAssessment[] = [];
@@ -231,6 +331,13 @@ export class AdminLearningComponent implements OnInit {
     );
   }
   success = '';
+    courses: Course[] = [];
+  aiCourseId: number | null = null;
+  aiQuestionCount = 5;
+  generatingAiQuestions = false;
+  aiGeneratedQuestions: any[] = [];
+  scorecardEmails: ScorecardEmail[] = [];
+  activeEmailModal: ScorecardEmail | null = null;
   assessmentDraft = { title: '', instructions: '', skillId: null as number | null, passPercentage: 70, maxAttempts: 3 };
   questionDraft = { prompt: '', options: ['', '', '', ''], correctOptionIndex: 0, difficulty: 'BEGINNER', points: 1 };
   resourceDraft: Omit<ResourcePayload, 'skillId'> & { skillId: number | null } = { title: '', description: '', skillId: null, resourceType: 'Article', difficultyLevel: 'Beginner', verifiedUrl: '', active: true };
@@ -240,6 +347,7 @@ export class AdminLearningComponent implements OnInit {
     private readonly skillService: SkillService,
     private readonly frameworkService: FrameworkService,
     private readonly authService: AuthService,
+    private readonly courseService: CourseService,
     private readonly router: Router
   ) {}
 
@@ -250,7 +358,62 @@ export class AdminLearningComponent implements OnInit {
     this.loadAssessments();
     this.loadUsers();
     this.loadResources();
+    this.loadCourses();
+    this.loadScorecardEmails();
   }
+  loadCourses(): void {
+    this.courseService.getAllCourses().subscribe({
+      next: (courses) => this.courses = courses,
+      error: () => {}
+    });
+  }
+
+  loadScorecardEmails(): void {
+    this.adminService.getScorecardEmails().subscribe({
+      next: (emails) => this.scorecardEmails = emails,
+      error: () => {}
+    });
+  }
+
+  onAiCourseChange(): void {
+    if (!this.aiCourseId) return;
+    const course = this.courses.find(c => c.id === this.aiCourseId);
+    if (!course) return;
+
+    this.assessmentDraft.title = course.title + ' - Comprehensive Assessment';
+    this.assessmentDraft.instructions = 'Complete all questions to verify your mastery of ' + course.title + '. Minimum ' + this.assessmentDraft.passPercentage + '% required to pass.';
+
+    const cLower = (course.title + ' ' + (course.category || '')).toLowerCase();
+    const matched = this.skills.find(s => {
+      const sLower = s.name.toLowerCase();
+      return cLower.includes(sLower) || sLower.split(' ').some(w => w.length > 3 && cLower.includes(w));
+    });
+    if (matched) {
+      this.assessmentDraft.skillId = matched.id ?? null;
+    }
+    this.generateAiQuestions();
+  }
+
+  generateAiQuestions(): void {
+    if (!this.aiCourseId) return;
+    this.generatingAiQuestions = true;
+    this.adminService.aiGenerateQuestions(this.aiCourseId, this.aiQuestionCount || 5).subscribe({
+      next: (questions) => {
+        this.aiGeneratedQuestions = questions;
+        this.generatingAiQuestions = false;
+        this.success = 'Generated ' + questions.length + ' AI questions for this course!';
+      },
+      error: () => {
+        this.generatingAiQuestions = false;
+        this.error = 'Could not generate AI questions. Please try again.';
+      }
+    });
+  }
+
+  removeAiQuestion(index: number): void {
+    this.aiGeneratedQuestions.splice(index, 1);
+  }
+
 
   loadAssessments(): void {
     this.adminService.getAssessments().subscribe({ next: data => {
@@ -264,7 +427,40 @@ export class AdminLearningComponent implements OnInit {
     if (this.assessmentDraft.skillId === null) return;
     this.saving = true;
     this.clearMessages();
-    this.adminService.createAssessment({ ...this.assessmentDraft, skillId: this.assessmentDraft.skillId }).subscribe({
+
+    if (this.aiGeneratedQuestions.length > 0) {
+      const course = this.courses.find(c => c.id === this.aiCourseId);
+      const payload = {
+        title: this.assessmentDraft.title.trim(),
+        instructions: this.assessmentDraft.instructions.trim(),
+        skillId: this.assessmentDraft.skillId,
+        courseId: this.aiCourseId || undefined,
+        courseTitle: course ? course.title : undefined,
+        passPercentage: this.assessmentDraft.passPercentage,
+        maxAttempts: this.assessmentDraft.maxAttempts,
+        active: true,
+        questions: this.aiGeneratedQuestions
+      };
+
+      this.adminService.createAssessmentWithQuestions(payload).subscribe({
+        next: created => {
+          this.saving = false;
+          this.success = 'Assessment published with ' + this.aiGeneratedQuestions.length + ' AI-generated questions and made available to students!';
+          this.selectedAssessmentId = created.id;
+          this.aiGeneratedQuestions = [];
+          this.aiCourseId = null;
+          this.assessmentDraft = { title: '', instructions: '', skillId: null, passPercentage: 70, maxAttempts: 3 };
+          this.loadAssessments();
+        },
+        error: () => {
+          this.saving = false;
+          this.error = 'Could not create assessment with AI questions.';
+        }
+      });
+      return;
+    }
+
+    this.adminService.createAssessment({ ...this.assessmentDraft, skillId: this.assessmentDraft.skillId, courseId: this.aiCourseId || undefined, courseTitle: this.courses.find(c => c.id === this.aiCourseId)?.title }).subscribe({
       next: created => {
         this.saving = false;
         this.success = 'Assessment created. Add at least one question before learners can take it.';

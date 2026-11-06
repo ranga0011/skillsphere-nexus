@@ -14,6 +14,7 @@ import { AuthService } from './auth.service';
 import { IssuedCertificateService } from './issued-certificate.service';
 import { CourseService } from './course.service';
 import { CareerService } from './career.service';
+import { LearningService } from './learning.service';
 import {
   Assessment,
   Certification,
@@ -137,6 +138,26 @@ export class WorkspaceComponent implements OnInit {
   isQuickVerifying: boolean = false;
 
   // Milestone 2 LMS State
+    // AI Course Assignment Creator State
+  showAiAssignmentModal = false;
+  aiSelectedCourseId: number | null = null;
+  aiQuestionCount = 5;
+  aiSelectedSkillId: number | null = null;
+  aiPassPercentage = 70;
+  aiMaxAttempts = 3;
+  aiAssignmentTitle = '';
+  aiAssignmentInstructions = '';
+  aiGeneratedQuestions: Array<{
+    prompt: string;
+    options: string[];
+    correctOptionIndex: number;
+    difficulty: string;
+    points: number;
+  }> = [];
+  isGeneratingAiQuestions = false;
+  isPublishingAssignment = false;
+  aiAssignmentSuccess = '';
+  aiAssignmentError = '';
   courses: Course[] = [];
   learningPaths: LearningPath[] = [];
   myEnrollments: CourseEnrollment[] = [];
@@ -484,6 +505,7 @@ export class WorkspaceComponent implements OnInit {
     private issuedCertificateService: IssuedCertificateService,
     public courseService: CourseService,
     public careerService: CareerService,
+    private learningService: LearningService,
     @Inject(AuthService) public authService: AuthService,
     private router: Router
   ) {}
@@ -1535,6 +1557,110 @@ export class WorkspaceComponent implements OnInit {
         setTimeout(() => this.courseSuccess = '', 3500);
       },
       error: () => this.courseError = 'Failed to create course.'
+    });
+  }
+
+  openAiAssignmentModal(course?: Course): void {
+    this.showAiAssignmentModal = true;
+    this.aiAssignmentSuccess = '';
+    this.aiAssignmentError = '';
+    this.aiQuestionCount = 5;
+    this.aiPassPercentage = 70;
+    this.aiMaxAttempts = 3;
+
+    if (course && course.id) {
+      this.aiSelectedCourseId = course.id;
+    } else if (this.courses.length > 0 && !this.aiSelectedCourseId) {
+      this.aiSelectedCourseId = this.courses[0].id!;
+    }
+    this.onAiCourseChange();
+  }
+
+  closeAiAssignmentModal(): void {
+    this.showAiAssignmentModal = false;
+  }
+
+  onAiCourseChange(): void {
+    if (!this.aiSelectedCourseId) return;
+    const course = this.courses.find(c => c.id === this.aiSelectedCourseId);
+    if (!course) return;
+
+    this.aiAssignmentTitle = course.title + ' - Comprehensive Assessment';
+    this.aiAssignmentInstructions = 'Complete all questions to demonstrate your competency in ' + course.title + '. Minimum ' + this.aiPassPercentage + '% required to pass and earn your accredited certificate.';
+
+    const cTitleLower = (course.title + ' ' + (course.category || '')).toLowerCase();
+    const matchedSkill = this.skills.find(s => {
+      const sLower = s.name.toLowerCase();
+      return cTitleLower.includes(sLower) || sLower.split(' ').some(w => w.length > 3 && cTitleLower.includes(w));
+    });
+    this.aiSelectedSkillId = matchedSkill?.id ?? (this.skills.length > 0 ? (this.skills[0].id ?? null) : null);
+
+    this.triggerAiQuestionGeneration();
+  }
+
+  onAiQuestionCountChange(): void {
+    if (this.aiQuestionCount && this.aiQuestionCount > 0) {
+      this.triggerAiQuestionGeneration();
+    }
+  }
+
+  triggerAiQuestionGeneration(): void {
+    if (!this.aiSelectedCourseId) return;
+    this.isGeneratingAiQuestions = true;
+    this.aiAssignmentError = '';
+    this.learningService.aiGenerateQuestions(this.aiSelectedCourseId, this.aiQuestionCount || 5).subscribe({
+      next: (questions) => {
+        this.aiGeneratedQuestions = questions;
+        this.isGeneratingAiQuestions = false;
+      },
+      error: () => {
+        this.isGeneratingAiQuestions = false;
+        this.aiAssignmentError = 'Could not generate questions automatically. Please try again.';
+      }
+    });
+  }
+
+  removeAiQuestion(index: number): void {
+    this.aiGeneratedQuestions.splice(index, 1);
+  }
+
+  getCourseTitle(courseId: number | null): string {
+    if (!courseId) return '';
+    return this.courses.find(c => c.id === courseId)?.title ?? '';
+  }
+
+  publishAiAssignment(): void {
+    if (!this.aiSelectedCourseId || !this.aiSelectedSkillId || this.aiGeneratedQuestions.length === 0) {
+      this.aiAssignmentError = 'Please select a course and generate at least one question before publishing.';
+      return;
+    }
+    this.isPublishingAssignment = true;
+    this.aiAssignmentError = '';
+
+    const course = this.courses.find(c => c.id === this.aiSelectedCourseId);
+    const payload = {
+      title: this.aiAssignmentTitle.trim() || (course ? course.title + ' Assessment' : 'Assessment'),
+      instructions: this.aiAssignmentInstructions.trim() || 'Complete the assessment.',
+      skillId: this.aiSelectedSkillId,
+      courseId: this.aiSelectedCourseId,
+      courseTitle: course ? course.title : undefined,
+      passPercentage: this.aiPassPercentage || 70,
+      maxAttempts: this.aiMaxAttempts || 3,
+      active: true,
+      questions: this.aiGeneratedQuestions
+    };
+
+    this.learningService.createAssessmentWithQuestions(payload).subscribe({
+      next: () => {
+        this.isPublishingAssignment = false;
+        this.courseSuccess = 'Assignment "' + payload.title + '" created with ' + this.aiGeneratedQuestions.length + ' AI-generated questions and published for students!';
+        this.closeAiAssignmentModal();
+        setTimeout(() => this.courseSuccess = '', 4500);
+      },
+      error: () => {
+        this.isPublishingAssignment = false;
+        this.aiAssignmentError = 'Failed to publish assessment. Please check required fields.';
+      }
     });
   }
 

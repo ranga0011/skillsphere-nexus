@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.skillsphere.skill.entity.AssessmentDefinition;
 import com.skillsphere.skill.entity.AssessmentQuestion;
+import com.skillsphere.skill.entity.AssessmentScorecardEmail;
 import com.skillsphere.skill.entity.Employee;
 import com.skillsphere.skill.entity.LearnerAssessmentAttempt;
 import com.skillsphere.skill.entity.LearnerAttemptAnswer;
@@ -42,6 +43,7 @@ public class LearnerAssessmentService {
     private final StudentRepository studentRepository;
     private final SkillAssessmentService skillAssessmentService;
     private final IssuedCertificateService certificateService;
+    private final AssessmentEmailService emailService;
 
     public LearnerAssessmentService(QuestionBankService questionBankService,
             AssessmentQuestionRepository questionRepository,
@@ -50,7 +52,8 @@ public class LearnerAssessmentService {
             EmployeeRepository employeeRepository,
             StudentRepository studentRepository,
             SkillAssessmentService skillAssessmentService,
-            IssuedCertificateService certificateService) {
+            IssuedCertificateService certificateService,
+            AssessmentEmailService emailService) {
         this.questionBankService = questionBankService;
         this.questionRepository = questionRepository;
         this.attemptRepository = attemptRepository;
@@ -59,6 +62,7 @@ public class LearnerAssessmentService {
         this.studentRepository = studentRepository;
         this.skillAssessmentService = skillAssessmentService;
         this.certificateService = certificateService;
+        this.emailService = emailService;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +77,8 @@ public class LearnerAssessmentService {
                             assessment.getSkill().getId(), assessment.getSkill().getName(),
                             assessment.getPassPercentage(), assessment.getMaxAttempts(),
                             assessment.isActive(),
-                            questionRepository.findByAssessment_IdOrderById(assessment.getId()).size(), remaining);
+                            questionRepository.findByAssessment_IdOrderById(assessment.getId()).size(), remaining,
+                            assessment.getCourseId(), assessment.getCourseTitle());
                 }).filter(assessment -> assessment.attemptsRemaining() > 0).toList();
     }
 
@@ -107,7 +112,8 @@ public class LearnerAssessmentService {
         AssessmentView assessmentView = new AssessmentView(definition.getId(), definition.getTitle(),
                 definition.getInstructions(), definition.getSkill().getId(), definition.getSkill().getName(),
                 definition.getPassPercentage(), definition.getMaxAttempts(), definition.isActive(),
-                questions.size(), (int) (definition.getMaxAttempts() - attemptsUsed - 1));
+                questions.size(), (int) (definition.getMaxAttempts() - attemptsUsed - 1),
+                definition.getCourseId(), definition.getCourseTitle());
         List<QuestionView> questionViews = questions.stream()
                 .map(question -> new QuestionView(question.getId(), question.getPrompt(),
                         question.getOptions(), question.getDifficulty(), question.getPoints()))
@@ -178,7 +184,11 @@ public class LearnerAssessmentService {
             skillAssessmentService.verifyAssessment(recorded.getId(), VerificationStatus.VERIFIED, "assessment-engine");
             certificate = certificateService.getForAssessment(recorded.getId()).orElse(null);
         }
-        return result(attempt, certificate);
+
+        // Send scorecard email to student/learner with full marks breakdown
+        AssessmentScorecardEmail email = emailService.sendScorecardEmail(attempt, earnedPoints, maximumPoints, percentage, passed, certificate);
+
+        return result(attempt, certificate, email);
     }
 
     @Transactional(readOnly = true)
@@ -190,18 +200,25 @@ public class LearnerAssessmentService {
         return attempts.stream().filter(attempt -> attempt.getStatus() == LearnerAttemptStatus.SUBMITTED)
                 .map(attempt -> result(attempt, attempt.getSkillAssessment() == null
                         ? null
-                        : certificateService.getForAssessment(attempt.getSkillAssessment().getId()).orElse(null)))
+                        : certificateService.getForAssessment(attempt.getSkillAssessment().getId()).orElse(null), null))
                 .toList();
     }
 
-    private AttemptResult result(LearnerAssessmentAttempt attempt, IssuedCertificateView certificate) {
+    private AttemptResult result(LearnerAssessmentAttempt attempt, IssuedCertificateView certificate,
+            AssessmentScorecardEmail email) {
+        boolean emailDispatched = email != null;
+        String recipient = email != null ? email.getRecipientEmail() : null;
+        String subject = email != null ? email.getSubject() : null;
+        String preview = email != null ? email.getBodyText() : null;
+
         return new AttemptResult(attempt.getId(), attempt.getAssessment().getId(),
                 attempt.getAssessment().getTitle(), attempt.getStatus(), attempt.getStartedAt(),
                 attempt.getSubmittedAt(), attempt.getAttemptNumber(), attempt.getScorePoints() == null
                         ? 0 : attempt.getScorePoints(),
                 attempt.getMaxPoints() == null ? 0 : attempt.getMaxPoints(),
                 attempt.getPercentage() == null ? 0 : attempt.getPercentage(), attempt.isPassed(),
-                attempt.getAssessment().getPassPercentage(), certificate);
+                attempt.getAssessment().getPassPercentage(), certificate,
+                emailDispatched, recipient, subject, preview);
     }
 
     private long attemptCount(Long assessmentId, Long employeeId, Long studentId) {

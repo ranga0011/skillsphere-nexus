@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { Assessment, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student } from './feature-models';
+import { Assessment, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student, ScorecardEmail } from './feature-models';
 import { FrameworkService } from './framework.service';
 import { IssuedCertificateService } from './issued-certificate.service';
 import { SkillService } from './skill.service';
@@ -23,8 +23,15 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           <h1>Your learning workspace</h1>
           <p>Track verified skills, assessments, competency gaps, and certificates.</p>
         </div>
-        <button class="secondary-btn" type="button" (click)="refresh()">Refresh</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button *ngIf="authService.isHrAdmin" class="secondary-btn" type="button" (click)="backToHr()">Back to HR Workspace</button>
+          <button class="secondary-btn" type="button" (click)="refresh()">Refresh</button>
+        </div>
       </header>
+
+      <div *ngIf="authService.isHrAdmin" class="hr-preview-banner">
+        <strong>HR Administrator Preview Mode:</strong> You are previewing the Student Portal. Assignments and tests visible here are exactly what students see.
+      </div>
 
       <p class="error-message" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
       <p class="success-message" role="status" *ngIf="successMessage">{{ successMessage }}</p>
@@ -73,7 +80,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           </button>
         </form>
         <p *ngIf="skillsLoading">Loading your skills...</p>
-                <div class="table-search-bar" *ngIf="!skillsLoading && assignments.length > 0">
+        <div class="table-search-bar" *ngIf="!skillsLoading && assignments.length > 0">
           <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
@@ -140,44 +147,10 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
       </section>
 
       <section class="panel">
-        <h2>Assessment history</h2>
-        <p>Assessment results are recorded and verified by authorized assessors; student-supplied scores are not accepted.</p>
-        <p *ngIf="assessmentLoading">Loading assessment history...</p>
-        <div class="table-wrap" *ngIf="!assessmentLoading">
-          <table>
-            <thead><tr><th>SKILL</th><th>RESULT</th><th>METHOD</th><th>DATE</th><th>STATUS</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let item of assessments">
-                <td>{{ item.skill?.name || 'Skill' }}</td>
-                <td>{{ item.score }}/{{ item.maxScore }}</td>
-                <td>{{ item.assessmentMethod }}</td>
-                <td>{{ item.assessmentDate }}</td>
-                <td>{{ item.verificationStatus }}</td>
-              </tr>
-              <tr *ngIf="assessments.length === 0"><td colspan="5">No assessments have been recorded for you.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Online assessment attempts</h2>
-        <div class="table-wrap">
-          <table><thead><tr><th>ASSESSMENT</th><th>ATTEMPT</th><th>RESULT</th><th>SUBMITTED</th><th>STATUS</th></tr></thead>
-            <tbody><tr *ngFor="let item of attemptHistory">
-              <td>{{ item.assessmentTitle }}</td><td>{{ item.attemptNumber }}</td>
-              <td>{{ item.scorePoints }}/{{ item.maxPoints }} ({{ item.percentage }}%)</td>
-              <td>{{ item.submittedAt }}</td><td>{{ item.passed ? 'PASSED' : 'NOT PASSED' }}</td>
-            </tr><tr *ngIf="attemptHistory.length === 0"><td colspan="5">No online assessment attempts submitted yet.</td></tr></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>Available assessments</h2>
-        <p>Questions are scored on the server. Correct answers are not sent to your browser.</p>
+        <h2>Available assessments & Course Assignments</h2>
+        <p>Assignments created by HR for your courses appear here. Questions are scored on the server and results are automatically emailed to you.</p>
         <p *ngIf="availableAssessmentsLoading">Loading available assessments...</p>
-                <div class="table-search-bar" *ngIf="!availableAssessmentsLoading && availableAssessments.length > 0">
+        <div class="table-search-bar" *ngIf="!availableAssessmentsLoading && availableAssessments.length > 0">
           <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
@@ -188,17 +161,23 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           <button *ngIf="assessmentSearch" class="search-clear-btn" (click)="assessmentSearch = ''">&times;</button>
         </div>
         <div class="assessment-card" *ngFor="let assessment of filteredAvailableAssessments">
-          <div><h3>{{ assessment.title }} - {{ assessment.skillName }}</h3><p>{{ assessment.instructions }}</p>
-            <small>{{ assessment.questionCount }} questions - passing score {{ assessment.passPercentage }}% - {{ assessment.attemptsRemaining }} attempt(s) remaining</small>
+          <div>
+            <span class="course-assignment-badge" *ngIf="assessment.courseTitle">COURSE ASSIGNMENT: {{ assessment.courseTitle }}</span>
+            <h3>{{ assessment.title }} - {{ assessment.skillName }}</h3>
+            <p>{{ assessment.instructions }}</p>
+            <small>{{ assessment.questionCount }} questions &bull; Passing score {{ assessment.passPercentage }}% &bull; {{ assessment.attemptsRemaining }} attempt(s) remaining</small>
           </div>
           <button class="primary-btn" type="button" (click)="startAssessment(assessment)" [disabled]="startingAssessmentId === assessment.id">
-            {{ startingAssessmentId === assessment.id ? 'Starting...' : 'Start assessment' }}
+            {{ startingAssessmentId === assessment.id ? 'Starting...' : 'Start Assessment' }}
           </button>
         </div>
         <p *ngIf="!availableAssessmentsLoading && availableAssessments.length === 0">No active assessments are available for your profile right now.</p>
         <div class="attempt-panel" *ngIf="activeAttempt as attempt">
-          <h3>{{ attempt.assessment.title }} - Attempt {{ attempt.attemptNumber }}</h3>
-          <p>{{ attempt.assessment.instructions }}</p>
+          <div class="attempt-header">
+            <span class="course-assignment-badge" *ngIf="attempt.assessment.courseTitle">COURSE: {{ attempt.assessment.courseTitle }}</span>
+            <h3>{{ attempt.assessment.title }} - Attempt {{ attempt.attemptNumber }}</h3>
+            <p>{{ attempt.assessment.instructions }}</p>
+          </div>
           <fieldset *ngFor="let question of attempt.questions; let questionNumber = index">
             <legend>{{ questionNumber + 1 }}. {{ question.prompt }} ({{ question.points }} point(s), {{ question.difficulty | lowercase }})</legend>
             <label class="answer-option" *ngFor="let option of question.options; let optionIndex = index">
@@ -206,35 +185,97 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
               {{ option }}
             </label>
           </fieldset>
-          <button class="primary-btn" type="button" (click)="submitAssessment()" [disabled]="submittingAssessment || !allQuestionsAnswered(attempt)">
-            {{ submittingAssessment ? 'Submitting...' : 'Submit answers' }}
+          <div class="attempt-actions">
+            <button class="primary-btn" type="button" (click)="submitAssessment()" [disabled]="submittingAssessment || !allQuestionsAnswered(attempt)">
+              {{ submittingAssessment ? 'Submitting & Scoring...' : 'Submit Answers & Calculate Grade' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Latest Attempt Result & Automated Scorecard Email Banner -->
+      <section class="panel scorecard-result-panel" *ngIf="latestAttemptResult as result">
+        <h2>Latest Assessment Evaluation & Scorecard</h2>
+        <div class="result-badge-bar">
+          <span class="status-pill" [class.success]="result.passed" [class.warning]="!result.passed">
+            {{ result.passed ? 'PASSED & CLEARED' : 'NOT PASSED' }}
+          </span>
+          <span class="score-pill">Marks: <strong>{{ result.scorePoints }} / {{ result.maxPoints }}</strong> ({{ result.percentage }}%)</span>
+          <span class="threshold-pill">Pass requirement: {{ result.passPercentage }}%</span>
+        </div>
+        <p class="success-message" *ngIf="result.passed">Congratulations! You cleared this assignment with {{ result.percentage }}%.</p>
+        <p class="error-message" *ngIf="!result.passed">Score: {{ result.percentage }}% (required {{ result.passPercentage }}%). You may use remaining attempts.</p>
+
+        <!-- Email Notification Notice -->
+        <div class="email-sent-banner">
+          <div class="email-banner-icon">&#9993;</div>
+          <div class="email-banner-text">
+            <strong>Official Scorecard Email Dispatched!</strong>
+            <p>An official scorecard email detailing your score ({{ result.scorePoints }}/{{ result.maxPoints }} Marks - {{ result.percentage }}%) has been sent to <u>{{ result.emailRecipient || profile?.email || 'your email' }}</u>.</p>
+          </div>
+          <button class="secondary-btn btn-sm" type="button" (click)="viewEmailPreview(result)">
+            Preview Sent Email
+          </button>
+        </div>
+
+        <div class="result-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+          <button class="primary-btn" type="button" *ngIf="result.certificate" (click)="download(result.certificate)">
+            Download Certificate {{ result.certificate.certificateNumber }} PDF
           </button>
         </div>
       </section>
 
-      <section class="panel" *ngIf="latestAttemptResult as result">
-        <h2>Latest assessment result</h2>
-        <p class="success-message" *ngIf="result.passed">Passed with {{ result.percentage }}% (required {{ result.passPercentage }}%).</p>
-        <p *ngIf="!result.passed">Not passed: {{ result.percentage }}% (required {{ result.passPercentage }}%). You may use any remaining attempts.</p>
-        <p>Score {{ result.scorePoints }}/{{ result.maxPoints }} - submitted {{ result.submittedAt }}</p>
-        <button class="primary-btn" type="button" *ngIf="result.certificate" (click)="download(result.certificate)">
-          Download {{ result.certificate.certificateNumber }} PDF
-        </button>
-        <p *ngIf="result.passed && !result.certificate">Assessment passed. No certificate met the configured certificate issuance threshold.</p>
+      <section class="panel">
+        <h2>Online assessment attempts history</h2>
+        <div class="table-wrap">
+          <table><thead><tr><th>ASSESSMENT</th><th>ATTEMPT</th><th>RESULT</th><th>SUBMITTED</th><th>STATUS</th></tr></thead>
+            <tbody><tr *ngFor="let item of attemptHistory">
+              <td>{{ item.assessmentTitle }}</td><td>{{ item.attemptNumber }}</td>
+              <td>{{ item.scorePoints }}/{{ item.maxPoints }} ({{ item.percentage }}%)</td>
+              <td>{{ item.submittedAt }}</td><td><span class="status-pill" [class.success]="item.passed" [class.warning]="!item.passed">{{ item.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
+            </tr><tr *ngIf="attemptHistory.length === 0"><td colspan="5">No online assessment attempts submitted yet.</td></tr></tbody>
+          </table>
+        </div>
       </section>
 
+      <!-- Dispatched Scorecards / Email History Section -->
       <section class="panel">
-        <h2>Resources for your selected skill gaps</h2>
-        <p *ngIf="recommendationsLoading">Finding configured resources for your gaps...</p>
-        <div class="resource-card" *ngFor="let recommendation of recommendations">
-          <div><strong>{{ recommendation.resource.title }} - {{ recommendation.resource.skillName }}</strong>
-            <p>{{ recommendation.resource.description }}</p>
-            <small>Gap {{ recommendation.priorityGap }} level(s) - current {{ recommendation.currentVerifiedProficiency }}/10 - required {{ recommendation.requiredProficiency }}/10 - {{ recommendation.resource.resourceType }} - {{ recommendation.resource.difficultyLevel }}</small>
+        <div class="panel-heading">
+          <div>
+            <h2>Dispatched Scorecard Emails</h2>
+            <p>Official grade notification emails sent to your registered address upon completing assignments.</p>
           </div>
-          <a *ngIf="recommendation.resource.verifiedUrl" [href]="recommendation.resource.verifiedUrl" target="_blank" rel="noopener noreferrer">Open resource</a>
+          <button class="secondary-btn" type="button" (click)="loadMyScorecardEmails()">Refresh Emails</button>
         </div>
-        <p *ngIf="!recommendationsLoading && frameworkId !== null && recommendations.length === 0">No learning resource is currently configured for your skill gaps.</p>
-        <p *ngIf="frameworkId === null">Choose a competency framework above to find matching resources.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ASSESSMENT</th>
+                <th>MARKS / SCORE</th>
+                <th>RECIPIENT EMAIL</th>
+                <th>RESULT</th>
+                <th>SENT DATE</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let em of scorecardEmails">
+                <td><strong>{{ em.assessmentTitle }}</strong></td>
+                <td>{{ em.scorePoints }}/{{ em.maxPoints }} ({{ em.percentage }}%)</td>
+                <td>{{ em.recipientEmail }}</td>
+                <td><span class="status-pill" [class.success]="em.passed" [class.warning]="!em.passed">{{ em.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
+                <td>{{ em.sentAt }}</td>
+                <td>
+                  <button class="secondary-btn btn-sm" type="button" (click)="openEmailModal(em)">View Email</button>
+                </td>
+              </tr>
+              <tr *ngIf="scorecardEmails.length === 0">
+                <td colspan="6">No scorecard emails dispatched yet. Complete an assessment above to receive your scorecard email.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel">
@@ -246,7 +287,7 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           <button class="secondary-btn" type="button" (click)="loadCertificates()">Refresh certificates</button>
         </div>
         <p *ngIf="certificatesLoading">Loading certificates...</p>
-                <div class="table-search-bar" *ngIf="!certificatesLoading && certificates.length > 0">
+        <div class="table-search-bar" *ngIf="!certificatesLoading && certificates.length > 0">
           <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
             type="search"
@@ -278,6 +319,26 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         </div>
       </section>
 
+      <!-- Scorecard Email Modal -->
+      <div class="modal-backdrop" *ngIf="activeEmailModal" (click)="activeEmailModal = null">
+        <div class="modal-content scorecard-email-modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <span class="modal-eyebrow">DISPATCHED SCORECARD EMAIL NOTIFICATION</span>
+              <h3>{{ activeEmailModal.subject }}</h3>
+              <p>Sent to: <strong>{{ activeEmailModal.recipientEmail }}</strong> ({{ activeEmailModal.recipientName || 'Learner' }}) &bull; {{ activeEmailModal.sentAt }}</p>
+            </div>
+            <button class="modal-close-btn" (click)="activeEmailModal = null">&times;</button>
+          </div>
+          <div class="modal-body">
+            <pre class="email-raw-body">{{ activeEmailModal.bodyText }}</pre>
+          </div>
+          <div class="modal-footer">
+            <button class="primary-btn" (click)="activeEmailModal = null">Close</button>
+          </div>
+        </div>
+      </div>
+
       <footer><button class="secondary-btn" type="button" (click)="logout()">Sign out</button></footer>
     </main>
   `,
@@ -293,8 +354,10 @@ export class StudentDashboardComponent implements OnInit {
   certificates: IssuedCertificate[] = [];
   availableAssessments: LearnerAssessment[] = [];
   attemptHistory: LearnerAttemptResult[] = [];
+  scorecardEmails: ScorecardEmail[] = [];
   activeAttempt: StartedAssessment | null = null;
   latestAttemptResult: LearnerAttemptResult | null = null;
+  activeEmailModal: ScorecardEmail | null = null;
   recommendations: LearningResourceRecommendation[] = [];
   skillId: number | null = null;
   frameworkId: number | null = null;
@@ -331,6 +394,7 @@ export class StudentDashboardComponent implements OnInit {
     return this.availableAssessments.filter(a =>
       (a.title && a.title.toLowerCase().includes(q)) ||
       (a.skillName && a.skillName.toLowerCase().includes(q)) ||
+      (a.courseTitle && a.courseTitle.toLowerCase().includes(q)) ||
       (a.instructions && a.instructions.toLowerCase().includes(q))
     );
   }
@@ -353,7 +417,7 @@ export class StudentDashboardComponent implements OnInit {
     private readonly frameworkService: FrameworkService,
     private readonly certificateService: IssuedCertificateService,
     private readonly learningService: LearningService,
-    private readonly authService: AuthService,
+    public readonly authService: AuthService,
     private readonly router: Router
   ) {}
 
@@ -369,6 +433,11 @@ export class StudentDashboardComponent implements OnInit {
     this.loadCertificates();
     this.loadAvailableAssessments();
     this.loadAttemptHistory();
+    this.loadMyScorecardEmails();
+  }
+
+  backToHr(): void {
+    void this.router.navigateByUrl('/hr');
   }
 
   saveProfile(): void {
@@ -478,8 +547,20 @@ export class StudentDashboardComponent implements OnInit {
         this.loadAssessments();
       },
       error: () => {
-        this.profileLoading = false;
-        this.errorMessage = 'Could not load your student profile.';
+        if (this.authService.isHrAdmin) {
+          this.studentService.getStudents().subscribe({
+            next: (students) => {
+              if (students.length > 0) {
+                this.profile = students[0];
+              }
+              this.profileLoading = false;
+            },
+            error: () => this.profileLoading = false
+          });
+        } else {
+          this.profileLoading = false;
+          this.errorMessage = 'Could not load your student profile.';
+        }
       }
     });
   }
@@ -532,7 +613,7 @@ export class StudentDashboardComponent implements OnInit {
     });
   }
 
-  private loadAvailableAssessments(): void {
+  loadAvailableAssessments(): void {
     this.availableAssessmentsLoading = true;
     this.learningService.getAvailableAssessments().subscribe({
       next: assessments => {
@@ -550,6 +631,17 @@ export class StudentDashboardComponent implements OnInit {
     this.learningService.getAttemptHistory().subscribe({
       next: history => this.attemptHistory = history,
       error: () => this.errorMessage = 'Could not load your assessment attempt history.'
+    });
+  }
+
+  loadMyScorecardEmails(): void {
+    this.learningService.getMyScorecardEmails().subscribe({
+      next: (emails) => {
+        this.scorecardEmails = emails;
+      },
+      error: () => {
+        // Silently catch if not yet available
+      }
     });
   }
 
@@ -585,12 +677,11 @@ export class StudentDashboardComponent implements OnInit {
         this.activeAttempt = null;
         this.submittingAssessment = false;
         this.successMessage = result.passed
-          ? 'Assessment submitted and passed.'
-          : 'Assessment submitted. Review your result and remaining attempts.';
+          ? `Assignment cleared! Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). Scorecard email sent to ${result.emailRecipient || this.profile?.email}.`
+          : `Assignment evaluated. Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). Scorecard email sent to ${result.emailRecipient || this.profile?.email}.`;
         if (result.certificate) {
           this.certificates = [result.certificate,
             ...this.certificates.filter(item => item.id !== result.certificate?.id)];
-          this.successMessage = 'Assessment passed and your achievement certificate is ready to download.';
         }
         this.loadCertificates();
         this.attemptHistory = [result, ...this.attemptHistory.filter(item => item.attemptId !== result.attemptId)];
@@ -601,6 +692,7 @@ export class StudentDashboardComponent implements OnInit {
         this.loadAttemptHistory();
         this.loadAssessments();
         this.loadAvailableAssessments();
+        this.loadMyScorecardEmails();
         if (this.frameworkId !== null) this.loadGapReport();
       },
       error: () => {
@@ -608,6 +700,29 @@ export class StudentDashboardComponent implements OnInit {
         this.errorMessage = 'Could not submit the assessment. Check your answers and whether this attempt was already submitted.';
       }
     });
+  }
+
+  viewEmailPreview(result: LearnerAttemptResult): void {
+    this.activeEmailModal = {
+      id: 0,
+      attemptId: result.attemptId,
+      assessmentId: result.assessmentId,
+      assessmentTitle: result.assessmentTitle,
+      recipientEmail: result.emailRecipient || this.profile?.email || 'student@skillsphere.com',
+      recipientName: this.profile?.name || 'Student Learner',
+      scorePoints: result.scorePoints,
+      maxPoints: result.maxPoints,
+      percentage: result.percentage,
+      passed: result.passed,
+      subject: result.emailSubject || `[SkillSphere Nexus] Assessment Scorecard: ${result.assessmentTitle}`,
+      bodyText: result.emailBodyPreview || `Official Scorecard Email for ${result.assessmentTitle}\nMarks: ${result.scorePoints}/${result.maxPoints} (${result.percentage}%)\nStatus: ${result.passed ? 'PASSED' : 'NOT PASSED'}`,
+      status: 'DELIVERED',
+      sentAt: result.submittedAt || new Date().toISOString()
+    };
+  }
+
+  openEmailModal(email: ScorecardEmail): void {
+    this.activeEmailModal = email;
   }
 
   private loadRecommendations(): void {

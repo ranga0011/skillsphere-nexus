@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { IssuedCertificate } from './feature-models';
+import { IssuedCertificate, ScorecardEmail, CreateAssessmentWithQuestionsRequest } from './feature-models';
 
 export interface LearnerAssessment {
   id: number;
@@ -14,6 +14,8 @@ export interface LearnerAssessment {
   questionCount: number;
   attemptsRemaining: number;
   active: boolean;
+  courseId?: number;
+  courseTitle?: string;
 }
 
 export interface AssessmentQuestion {
@@ -47,6 +49,10 @@ export interface LearnerAttemptResult {
   passed: boolean;
   passPercentage: number;
   certificate: IssuedCertificate | null;
+  emailDispatched?: boolean;
+  emailRecipient?: string;
+  emailSubject?: string;
+  emailBodyPreview?: string;
 }
 
 export interface LearningResourceRecommendation {
@@ -69,6 +75,7 @@ export interface LearningResourceRecommendation {
 @Injectable({ providedIn: 'root' })
 export class LearningService {
   private readonly apiUrl = 'http://localhost:8080/api/learning';
+  private readonly adminApiUrl = 'http://localhost:8080/api/admin/learning';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -93,9 +100,24 @@ export class LearningService {
     return this.http.get<LearnerAttemptResult[]>(`${this.apiUrl}/attempts`);
   }
 
+  getMyScorecardEmails(): Observable<ScorecardEmail[]> {
+    return this.http.get<ScorecardEmail[]>(`${this.apiUrl}/my-scorecard-emails`);
+  }
+
   getRecommendations(frameworkId: number): Observable<LearningResourceRecommendation[]> {
     return this.http.get<LearningResourceRecommendation[]>(
       `${this.apiUrl}/resources/recommendations`, { params: { frameworkId } }
     );
+  }
+
+  aiGenerateQuestions(courseId: number, questionCount: number): Observable<any[]> {
+    return this.http.post<any[]>(`${this.adminApiUrl}/ai-generate-questions`, {
+      courseId,
+      questionCount
+    });
+  }
+
+  createAssessmentWithQuestions(payload: CreateAssessmentWithQuestionsRequest): Observable<LearnerAssessment> {
+    return this.http.post<LearnerAssessment>(`${this.adminApiUrl}/assessments/with-questions`, payload);
   }
 }
