@@ -91,31 +91,7 @@ import { AuthService } from './auth.service';
             </div>
           </div>
         </div>
-        <div class="form-grid question-maker" *ngIf="assessments.length">
-          <label>Assessment
-            <select name="questionAssessment" [(ngModel)]="selectedAssessmentId" (ngModelChange)="loadQuestions()">
-              <option *ngFor="let assessment of assessments" [ngValue]="assessment.id">{{ assessment.title }} ({{ assessment.questionCount }} questions)</option>
-            </select>
-          </label>
-          <label>Question prompt<textarea name="questionPrompt" [(ngModel)]="questionDraft.prompt" required maxlength="1000"></textarea></label>
-          <label *ngFor="let option of questionDraft.options; let index = index">Option {{ index + 1 }}
-            <input [name]="'option' + index" [(ngModel)]="questionDraft.options[index]" required maxlength="500" />
-          </label>
-          <label>Correct option
-            <select name="correctOption" [(ngModel)]="questionDraft.correctOptionIndex">
-              <option [ngValue]="0">Option 1</option><option [ngValue]="1">Option 2</option>
-              <option [ngValue]="2">Option 3</option><option [ngValue]="3">Option 4</option>
-            </select>
-          </label>
-          <label>Difficulty
-            <select name="difficulty" [(ngModel)]="questionDraft.difficulty">
-              <option value="BEGINNER">Beginner</option><option value="INTERMEDIATE">Intermediate</option><option value="ADVANCED">Advanced</option>
-            </select>
-          </label>
-          <label>Points<input name="points" type="number" [(ngModel)]="questionDraft.points" min="1" max="10" /></label>
-          <button class="primary-btn" type="button" (click)="addQuestion()" [disabled]="saving || !selectedAssessmentId">Add question</button>
-        </div>
-                <h2>Assessment bank</h2>
+        <h2>Assessment bank</h2>
         <div class="table-search-bar" *ngIf="assessments.length > 0">
           <span class="search-input-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" class="search-svg"><circle cx="8.5" cy="8.5" r="5.5"></circle><line x1="12.5" y1="12.5" x2="17" y2="17"></line></svg></span>
           <input
@@ -128,11 +104,41 @@ import { AuthService } from './auth.service';
         </div>
         <p *ngIf="assessments.length === 0">No assessments have been configured yet.</p>
         <article class="list-card" *ngFor="let assessment of filteredAssessments">
-          <div><strong>{{ assessment.title }}</strong><span>{{ assessment.skillName }} - {{ assessment.questionCount }} questions - pass {{ assessment.passPercentage }}% - {{ assessment.attemptsRemaining }} attempts shown to learners</span><small>{{ assessment.instructions }}</small></div>
-          <div class="status-actions"><span class="status-pill" [class.success]="assessment.active" [class.warning]="!assessment.active">{{ assessment.active ? 'ACTIVE' : 'INACTIVE' }}</span>
-            <button class="secondary-btn" type="button" (click)="toggleAssessment(assessment)">{{ assessment.active ? 'Deactivate' : 'Activate' }}</button></div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong>{{ assessment.title }}</strong>
+              <span class="course-assignment-badge" *ngIf="assessment.courseTitle">Course: {{ assessment.courseTitle }}</span>
+            </div>
+            <span>{{ assessment.skillName }} &bull; {{ assessment.questionCount }} questions &bull; Pass requirement {{ assessment.passPercentage }}% &bull; {{ assessment.attemptsRemaining }} attempts shown to learners</span>
+            <small>{{ assessment.instructions }}</small>
+            <div style="margin-top: 6px;">
+              <button class="secondary-btn btn-sm" type="button" (click)="toggleViewQuestions(assessment.id)">
+                {{ expandedAssessmentId === assessment.id ? 'Hide Questions' : 'View Questions (' + assessment.questionCount + ')' }}
+              </button>
+            </div>
+            <div class="expanded-questions-box" *ngIf="expandedAssessmentId === assessment.id">
+              <p *ngIf="loadingQuestions" style="color: #64748b; font-size: 12px; margin: 4px 0;">Loading questions...</p>
+              <div *ngIf="!loadingQuestions && expandedQuestions.length === 0" style="color: #64748b; font-size: 12px; margin-top: 4px;">
+                No questions configured for this assessment.
+              </div>
+              <div *ngFor="let q of expandedQuestions; let qi = index" class="preview-q-row">
+                <div class="preview-q-head">
+                  <strong>Q{{ qi + 1 }}. {{ q.prompt }}</strong>
+                  <span class="preview-q-diff">{{ q.difficulty }} ({{ q.points }} pt{{ q.points > 1 ? 's' : '' }})</span>
+                </div>
+                <div class="preview-q-opts">
+                  <span *ngFor="let opt of q.options; let oi = index" class="preview-opt-item">
+                    {{ ['A','B','C','D','E'][oi] || oi + 1 }}. {{ opt }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="status-actions">
+            <span class="status-pill" [class.success]="assessment.active" [class.warning]="!assessment.active">{{ assessment.active ? 'ACTIVE' : 'INACTIVE' }}</span>
+            <button class="secondary-btn" type="button" (click)="toggleAssessment(assessment)">{{ assessment.active ? 'Deactivate' : 'Activate' }}</button>
+          </div>
         </article>
-        <p *ngIf="questions.length">Questions in selected assessment: {{ questions.length }}. Correct answers are not included in learner question payloads.</p>
       </section>
 
       <section class="panel" *ngIf="tab === 'users'">
@@ -289,7 +295,6 @@ export class AdminLearningComponent implements OnInit {
   users: AdminUser[] = [];
   resources: AdminResource[] = [];
   analytics: GapAnalytics | null = null;
-  selectedAssessmentId: number | null = null;
   analyticsFrameworkId: number | null = null;
   analyticsPage = 0;
   skillFilter = '';
@@ -339,7 +344,9 @@ export class AdminLearningComponent implements OnInit {
   scorecardEmails: ScorecardEmail[] = [];
   activeEmailModal: ScorecardEmail | null = null;
   assessmentDraft = { title: '', instructions: '', skillId: null as number | null, passPercentage: 70, maxAttempts: 3 };
-  questionDraft = { prompt: '', options: ['', '', '', ''], correctOptionIndex: 0, difficulty: 'BEGINNER', points: 1 };
+  expandedAssessmentId: number | null = null;
+  expandedQuestions: any[] = [];
+  loadingQuestions = false;
   resourceDraft: Omit<ResourcePayload, 'skillId'> & { skillId: number | null } = { title: '', description: '', skillId: null, resourceType: 'Article', difficultyLevel: 'Beginner', verifiedUrl: '', active: true };
 
   constructor(
@@ -416,11 +423,16 @@ export class AdminLearningComponent implements OnInit {
 
 
   loadAssessments(): void {
-    this.adminService.getAssessments().subscribe({ next: data => {
-      this.assessments = data;
-      if (this.selectedAssessmentId === null && data.length) this.selectedAssessmentId = data[0].id;
-      if (this.selectedAssessmentId !== null) this.loadQuestions();
-    }, error: () => this.error = 'Could not load the assessment bank.' });
+    this.adminService.getAssessments().subscribe({
+      next: data => {
+        this.assessments = data;
+        if (this.expandedAssessmentId !== null && !data.some(a => a.id === this.expandedAssessmentId)) {
+          this.expandedAssessmentId = null;
+          this.expandedQuestions = [];
+        }
+      },
+      error: () => this.error = 'Could not load the assessment bank.'
+    });
   }
 
   createAssessment(): void {
@@ -428,73 +440,42 @@ export class AdminLearningComponent implements OnInit {
     this.saving = true;
     this.clearMessages();
 
-    if (this.aiGeneratedQuestions.length > 0) {
-      const course = this.courses.find(c => c.id === this.aiCourseId);
-      const payload = {
-        title: this.assessmentDraft.title.trim(),
-        instructions: this.assessmentDraft.instructions.trim(),
-        skillId: this.assessmentDraft.skillId,
-        courseId: this.aiCourseId || undefined,
-        courseTitle: course ? course.title : undefined,
-        passPercentage: this.assessmentDraft.passPercentage,
-        maxAttempts: this.assessmentDraft.maxAttempts,
-        active: true,
-        questions: this.aiGeneratedQuestions
-      };
-
-      this.adminService.createAssessmentWithQuestions(payload).subscribe({
-        next: created => {
-          this.saving = false;
-          this.success = 'Assessment published with ' + this.aiGeneratedQuestions.length + ' AI-generated questions and made available to students!';
-          this.selectedAssessmentId = created.id;
-          this.aiGeneratedQuestions = [];
-          this.aiCourseId = null;
-          this.assessmentDraft = { title: '', instructions: '', skillId: null, passPercentage: 70, maxAttempts: 3 };
-          this.loadAssessments();
-        },
-        error: () => {
-          this.saving = false;
-          this.error = 'Could not create assessment with AI questions.';
-        }
-      });
+    if (this.aiGeneratedQuestions.length === 0) {
+      this.saving = false;
+      this.error = 'Please select a course to generate AI questions before creating the assessment.';
       return;
     }
 
-    this.adminService.createAssessment({ ...this.assessmentDraft, skillId: this.assessmentDraft.skillId, courseId: this.aiCourseId || undefined, courseTitle: this.courses.find(c => c.id === this.aiCourseId)?.title }).subscribe({
-      next: created => {
+    const course = this.courses.find(c => c.id === this.aiCourseId);
+    const payload = {
+      title: this.assessmentDraft.title.trim(),
+      instructions: this.assessmentDraft.instructions.trim(),
+      skillId: this.assessmentDraft.skillId,
+      courseId: this.aiCourseId || undefined,
+      courseTitle: course ? course.title : undefined,
+      passPercentage: this.assessmentDraft.passPercentage,
+      maxAttempts: this.assessmentDraft.maxAttempts,
+      active: true,
+      questions: this.aiGeneratedQuestions
+    };
+
+    this.adminService.createAssessmentWithQuestions(payload).subscribe({
+      next: () => {
         this.saving = false;
-        this.success = 'Assessment created. Add at least one question before learners can take it.';
-        this.selectedAssessmentId = created.id;
+        this.success = 'Assessment published with ' + this.aiGeneratedQuestions.length + ' AI-generated questions and made available to students!';
+        this.aiGeneratedQuestions = [];
+        this.aiCourseId = null;
         this.assessmentDraft = { title: '', instructions: '', skillId: null, passPercentage: 70, maxAttempts: 3 };
         this.loadAssessments();
       },
-      error: () => { this.saving = false; this.error = 'Could not create the assessment. Check the skill and thresholds.'; }
-    });
-  }
-
-  addQuestion(): void {
-    if (this.selectedAssessmentId === null || this.questionDraft.options.some(option => !option.trim())) return;
-    this.saving = true;
-    this.clearMessages();
-    this.adminService.createQuestion(this.selectedAssessmentId, this.questionDraft).subscribe({
-      next: () => {
+      error: () => {
         this.saving = false;
-        this.success = 'Question added.';
-        this.questionDraft = { prompt: '', options: ['', '', '', ''], correctOptionIndex: 0, difficulty: 'BEGINNER', points: 1 };
-        this.loadAssessments();
-      },
-      error: () => { this.saving = false; this.error = 'Could not add this question.'; }
+        this.error = 'Could not create assessment with AI questions.';
+      }
     });
   }
 
-  loadQuestions(): void {
-    if (this.selectedAssessmentId === null) { this.questions = []; return; }
-    this.adminService.getQuestions(this.selectedAssessmentId).subscribe({
-      next: data => this.questions = data,
-      error: () => this.error = 'Could not load questions for this assessment.'
-    });
-  }
-
+  
   toggleAssessment(assessment: LearnerAssessment): void {
     const skill = this.skills.find(item => item.id === assessment.skillId);
     if (!assessment.id || !skill) return;
@@ -514,6 +495,26 @@ export class AdminLearningComponent implements OnInit {
     });
   }
 
+  toggleViewQuestions(assessmentId: number): void {
+    if (this.expandedAssessmentId === assessmentId) {
+      this.expandedAssessmentId = null;
+      this.expandedQuestions = [];
+      return;
+    }
+    this.expandedAssessmentId = assessmentId;
+    this.loadingQuestions = true;
+    this.adminService.getQuestions(assessmentId).subscribe({
+      next: data => {
+        this.expandedQuestions = data;
+        this.loadingQuestions = false;
+      },
+      error: () => {
+        this.expandedQuestions = [];
+        this.loadingQuestions = false;
+        this.error = 'Could not load questions for this assessment.';
+      }
+    });
+  }
   loadUsers(): void {
     this.adminService.getUsers(this.userPage).subscribe({
       next: page => { this.users = page.content; this.userTotalPages = page.totalPages; },

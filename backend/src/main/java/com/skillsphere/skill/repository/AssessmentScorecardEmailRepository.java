@@ -14,3 +14,4 @@ public interface AssessmentScorecardEmailRepository extends JpaRepository<Assess
     List<AssessmentScorecardEmail> findByRecipientEmailIgnoreCaseOrderBySentAtDesc(String recipientEmail);
     List<AssessmentScorecardEmail> findAllByOrderBySentAtDesc();
 }
+

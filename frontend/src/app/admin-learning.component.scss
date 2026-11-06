@@ -106,7 +106,56 @@ input:focus, select:focus, textarea:focus {
 
 textarea { min-height: 4.5rem; }
 
-.question-maker { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+.expanded-questions-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-q-row {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.preview-q-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+
+  strong {
+    font-size: 12.5px;
+    color: #0f172a;
+  }
+
+  .preview-q-diff {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+  }
+}
+
+.preview-q-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.preview-opt-item {
+  font-size: 11.5px;
+  color: #475569;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
 
 .list-card {
   padding: .75rem 0;

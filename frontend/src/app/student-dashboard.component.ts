@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { Assessment, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student, ScorecardEmail } from './feature-models';
+import { Assessment, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student } from './feature-models';
 import { FrameworkService } from './framework.service';
 import { IssuedCertificateService } from './issued-certificate.service';
 import { SkillService } from './skill.service';
@@ -178,15 +178,37 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
             <h3>{{ attempt.assessment.title }} - Attempt {{ attempt.attemptNumber }}</h3>
             <p>{{ attempt.assessment.instructions }}</p>
           </div>
-          <fieldset *ngFor="let question of attempt.questions; let questionNumber = index">
-            <legend>{{ questionNumber + 1 }}. {{ question.prompt }} ({{ question.points }} point(s), {{ question.difficulty | lowercase }})</legend>
-            <label class="answer-option" *ngFor="let option of question.options; let optionIndex = index">
-              <input type="radio" [name]="'question-' + question.id" [value]="optionIndex" [(ngModel)]="question.selectedOptionIndex" />
-              {{ option }}
-            </label>
-          </fieldset>
+          <div class="test-questions-wrapper">
+            <div class="test-question-card" *ngFor="let question of attempt.questions; let questionNumber = index">
+              <div class="test-question-header">
+                <div class="test-q-meta">
+                  <span class="test-q-num">Question {{ questionNumber + 1 }}</span>
+                  <span class="test-badge-points">{{ question.points }} point{{ question.points > 1 ? 's' : '' }}</span>
+                  <span class="test-badge-diff" [class]="question.difficulty ? question.difficulty.toLowerCase() : 'beginner'">{{ question.difficulty || 'Intermediate' }}</span>
+                </div>
+              </div>
+              <h4 class="test-question-prompt">{{ question.prompt }}</h4>
+              <div class="test-options-list">
+                <label
+                  class="test-option-row"
+                  *ngFor="let option of question.options; let optionIndex = index"
+                  [class.selected]="question.selectedOptionIndex === optionIndex"
+                >
+                  <input
+                    type="radio"
+                    class="test-option-radio"
+                    [name]="'question-' + question.id"
+                    [value]="optionIndex"
+                    [(ngModel)]="question.selectedOptionIndex"
+                  />
+                  <span class="option-letter-badge">{{ getOptionLetter(optionIndex) }}</span>
+                  <span class="option-text">{{ option }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
           <div class="attempt-actions">
-            <button class="primary-btn" type="button" (click)="submitAssessment()" [disabled]="submittingAssessment || !allQuestionsAnswered(attempt)">
+            <button class="primary-btn submit-test-btn" type="button" (click)="submitAssessment()" [disabled]="submittingAssessment || !allQuestionsAnswered(attempt)">
               {{ submittingAssessment ? 'Submitting & Scoring...' : 'Submit Answers & Calculate Grade' }}
             </button>
           </div>
@@ -206,16 +228,13 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <p class="success-message" *ngIf="result.passed">Congratulations! You cleared this assignment with {{ result.percentage }}%.</p>
         <p class="error-message" *ngIf="!result.passed">Score: {{ result.percentage }}% (required {{ result.passPercentage }}%). You may use remaining attempts.</p>
 
-        <!-- Email Notification Notice -->
+        <!-- Email Notification Notice: Directs student to their Gmail inbox -->
         <div class="email-sent-banner">
           <div class="email-banner-icon">&#9993;</div>
           <div class="email-banner-text">
-            <strong>Official Scorecard Email Dispatched!</strong>
-            <p>An official scorecard email detailing your score ({{ result.scorePoints }}/{{ result.maxPoints }} Marks - {{ result.percentage }}%) has been sent to <u>{{ result.emailRecipient || profile?.email || 'your email' }}</u>.</p>
+            <strong>Official Scorecard Dispatched to Gmail!</strong>
+            <p>An official grade scorecard detailing your marks ({{ result.scorePoints }}/{{ result.maxPoints }} &bull; {{ result.percentage }}%) has been dispatched to <strong>{{ result.emailRecipient || profile?.email || 'your registered Gmail' }}</strong>. Please check your Gmail or email inbox.</p>
           </div>
-          <button class="secondary-btn btn-sm" type="button" (click)="viewEmailPreview(result)">
-            Preview Sent Email
-          </button>
         </div>
 
         <div class="result-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem;">
@@ -234,46 +253,6 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
               <td>{{ item.scorePoints }}/{{ item.maxPoints }} ({{ item.percentage }}%)</td>
               <td>{{ item.submittedAt }}</td><td><span class="status-pill" [class.success]="item.passed" [class.warning]="!item.passed">{{ item.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
             </tr><tr *ngIf="attemptHistory.length === 0"><td colspan="5">No online assessment attempts submitted yet.</td></tr></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Dispatched Scorecards / Email History Section -->
-      <section class="panel">
-        <div class="panel-heading">
-          <div>
-            <h2>Dispatched Scorecard Emails</h2>
-            <p>Official grade notification emails sent to your registered address upon completing assignments.</p>
-          </div>
-          <button class="secondary-btn" type="button" (click)="loadMyScorecardEmails()">Refresh Emails</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>ASSESSMENT</th>
-                <th>MARKS / SCORE</th>
-                <th>RECIPIENT EMAIL</th>
-                <th>RESULT</th>
-                <th>SENT DATE</th>
-                <th>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let em of scorecardEmails">
-                <td><strong>{{ em.assessmentTitle }}</strong></td>
-                <td>{{ em.scorePoints }}/{{ em.maxPoints }} ({{ em.percentage }}%)</td>
-                <td>{{ em.recipientEmail }}</td>
-                <td><span class="status-pill" [class.success]="em.passed" [class.warning]="!em.passed">{{ em.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
-                <td>{{ em.sentAt }}</td>
-                <td>
-                  <button class="secondary-btn btn-sm" type="button" (click)="openEmailModal(em)">View Email</button>
-                </td>
-              </tr>
-              <tr *ngIf="scorecardEmails.length === 0">
-                <td colspan="6">No scorecard emails dispatched yet. Complete an assessment above to receive your scorecard email.</td>
-              </tr>
-            </tbody>
           </table>
         </div>
       </section>
@@ -319,26 +298,6 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         </div>
       </section>
 
-      <!-- Scorecard Email Modal -->
-      <div class="modal-backdrop" *ngIf="activeEmailModal" (click)="activeEmailModal = null">
-        <div class="modal-content scorecard-email-modal" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <div>
-              <span class="modal-eyebrow">DISPATCHED SCORECARD EMAIL NOTIFICATION</span>
-              <h3>{{ activeEmailModal.subject }}</h3>
-              <p>Sent to: <strong>{{ activeEmailModal.recipientEmail }}</strong> ({{ activeEmailModal.recipientName || 'Learner' }}) &bull; {{ activeEmailModal.sentAt }}</p>
-            </div>
-            <button class="modal-close-btn" (click)="activeEmailModal = null">&times;</button>
-          </div>
-          <div class="modal-body">
-            <pre class="email-raw-body">{{ activeEmailModal.bodyText }}</pre>
-          </div>
-          <div class="modal-footer">
-            <button class="primary-btn" (click)="activeEmailModal = null">Close</button>
-          </div>
-        </div>
-      </div>
-
       <footer><button class="secondary-btn" type="button" (click)="logout()">Sign out</button></footer>
     </main>
   `,
@@ -354,10 +313,8 @@ export class StudentDashboardComponent implements OnInit {
   certificates: IssuedCertificate[] = [];
   availableAssessments: LearnerAssessment[] = [];
   attemptHistory: LearnerAttemptResult[] = [];
-  scorecardEmails: ScorecardEmail[] = [];
   activeAttempt: StartedAssessment | null = null;
   latestAttemptResult: LearnerAttemptResult | null = null;
-  activeEmailModal: ScorecardEmail | null = null;
   recommendations: LearningResourceRecommendation[] = [];
   skillId: number | null = null;
   frameworkId: number | null = null;
@@ -433,7 +390,6 @@ export class StudentDashboardComponent implements OnInit {
     this.loadCertificates();
     this.loadAvailableAssessments();
     this.loadAttemptHistory();
-    this.loadMyScorecardEmails();
   }
 
   backToHr(): void {
@@ -633,18 +589,6 @@ export class StudentDashboardComponent implements OnInit {
       error: () => this.errorMessage = 'Could not load your assessment attempt history.'
     });
   }
-
-  loadMyScorecardEmails(): void {
-    this.learningService.getMyScorecardEmails().subscribe({
-      next: (emails) => {
-        this.scorecardEmails = emails;
-      },
-      error: () => {
-        // Silently catch if not yet available
-      }
-    });
-  }
-
   startAssessment(assessment: LearnerAssessment): void {
     this.startingAssessmentId = assessment.id;
     this.errorMessage = '';
@@ -692,7 +636,6 @@ export class StudentDashboardComponent implements OnInit {
         this.loadAttemptHistory();
         this.loadAssessments();
         this.loadAvailableAssessments();
-        this.loadMyScorecardEmails();
         if (this.frameworkId !== null) this.loadGapReport();
       },
       error: () => {
@@ -702,27 +645,9 @@ export class StudentDashboardComponent implements OnInit {
     });
   }
 
-  viewEmailPreview(result: LearnerAttemptResult): void {
-    this.activeEmailModal = {
-      id: 0,
-      attemptId: result.attemptId,
-      assessmentId: result.assessmentId,
-      assessmentTitle: result.assessmentTitle,
-      recipientEmail: result.emailRecipient || this.profile?.email || 'student@skillsphere.com',
-      recipientName: this.profile?.name || 'Student Learner',
-      scorePoints: result.scorePoints,
-      maxPoints: result.maxPoints,
-      percentage: result.percentage,
-      passed: result.passed,
-      subject: result.emailSubject || `[SkillSphere Nexus] Assessment Scorecard: ${result.assessmentTitle}`,
-      bodyText: result.emailBodyPreview || `Official Scorecard Email for ${result.assessmentTitle}\nMarks: ${result.scorePoints}/${result.maxPoints} (${result.percentage}%)\nStatus: ${result.passed ? 'PASSED' : 'NOT PASSED'}`,
-      status: 'DELIVERED',
-      sentAt: result.submittedAt || new Date().toISOString()
-    };
-  }
-
-  openEmailModal(email: ScorecardEmail): void {
-    this.activeEmailModal = email;
+  getOptionLetter(index: number): string {
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    return letters[index] || String(index + 1);
   }
 
   private loadRecommendations(): void {
