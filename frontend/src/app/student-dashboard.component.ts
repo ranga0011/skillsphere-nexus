@@ -249,12 +249,43 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         <p class="success-message" *ngIf="result.passed">Congratulations! You cleared this assignment with {{ result.percentage }}%.</p>
         <p class="error-message" *ngIf="!result.passed">Score: {{ result.percentage }}% (required {{ result.passPercentage }}%). You may use remaining attempts.</p>
 
-        <!-- Email Notification Notice: Directs student to their Gmail inbox -->
-        <div class="email-sent-banner">
+        <!-- Email Notification Notice: Shows actual live SMTP status & setup guidance -->
+        <div class="email-sent-banner" [class.delivered]="result.emailStatus === 'DELIVERED'" [class.pending]="result.emailStatus !== 'DELIVERED'">
           <div class="email-banner-icon">&#9993;</div>
           <div class="email-banner-text">
-            <strong>Official Scorecard Dispatched to Gmail!</strong>
-            <p>An official grade scorecard detailing your marks ({{ result.scorePoints }}/{{ result.maxPoints }} &bull; {{ result.percentage }}%) has been dispatched to <strong>{{ result.emailRecipient || profile?.email || 'your registered Gmail' }}</strong>. Please check your Gmail or email inbox.</p>
+            <div *ngIf="result.emailStatus === 'DELIVERED'">
+              <strong>Official Scorecard Delivered to Gmail!</strong>
+              <p>An official grade scorecard detailing your marks ({{ result.scorePoints }}/{{ result.maxPoints }} &bull; {{ result.percentage }}%) has been delivered via Gmail SMTP to <strong>{{ result.emailRecipient || profile?.email || 'your registered Gmail' }}</strong>. Please check your Gmail inbox (and Spam/Promotions folder).</p>
+            </div>
+            <div *ngIf="result.emailStatus !== 'DELIVERED'">
+              <strong>Scorecard Evaluated &amp; Stored for {{ result.emailRecipient || profile?.email || 'your registered Gmail' }}</strong>
+              <p>
+                Marks scored: <strong>{{ result.scorePoints }} / {{ result.maxPoints }}</strong> ({{ result.percentage }}%).
+                Live email transmission to your personal Gmail requires configuring your Google App Password.
+              </p>
+              <div class="email-setup-actions">
+                <button class="setup-hint-toggle" type="button" (click)="showEmailSetupGuide = !showEmailSetupGuide">
+                  {{ showEmailSetupGuide ? 'Hide Setup Instructions' : 'How to receive scorecards in your Gmail inbox' }}
+                </button>
+                <button class="test-email-btn" type="button" (click)="testSendEmail()" [disabled]="sendingTestEmail">
+                  {{ sendingTestEmail ? 'Testing SMTP Connection...' : 'Test Gmail SMTP Delivery' }}
+                </button>
+              </div>
+              <p class="test-email-result-msg" *ngIf="testEmailMessage" [class.success]="testEmailSuccess" [class.error]="!testEmailSuccess">
+                {{ testEmailMessage }}
+              </p>
+              <div class="setup-guide-box" *ngIf="showEmailSetupGuide">
+                <h4>3 Steps to Enable Live Gmail Delivery</h4>
+                <ol>
+                  <li>Visit your Google Account App Passwords page: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a></li>
+                  <li>Create a new App Password named "SkillSphere" (Google generates a 16-character code like <code>abcd efgh ijkl mnop</code>).</li>
+                  <li>In <code>backend/src/main/resources/application-local.properties</code>, configure:
+                    <pre>spring.mail.username={{ profile?.email || 'your_email@gmail.com' }}&#10;spring.mail.password=your_16_character_app_password</pre>
+                  </li>
+                </ol>
+                <small>Once added, all future assessment submissions and tests will arrive in your Gmail inbox immediately.</small>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -543,6 +574,10 @@ export class StudentDashboardComponent implements OnInit {
     return Array.from(map.values()).filter(c => c.attemptCount >= 3 || c.passed || !this.availableAssessments.some(a => a.id === c.assessmentId && a.attemptsRemaining > 0));
   }
   successMessage = '';
+  showEmailSetupGuide = false;
+  sendingTestEmail = false;
+  testEmailMessage: string | null = null;
+  testEmailSuccess = false;
 
   constructor(
     private readonly studentService: StudentService,
@@ -796,9 +831,12 @@ export class StudentDashboardComponent implements OnInit {
         this.latestAttemptResult = result;
         this.activeAttempt = null;
         this.submittingAssessment = false;
+        const emailDeliveryNotice = result.emailStatus === 'DELIVERED'
+          ? `Scorecard email delivered to ${result.emailRecipient || this.profile?.email}.`
+          : `Scorecard recorded for ${result.emailRecipient || this.profile?.email}.`;
         this.successMessage = result.passed
-          ? `Assignment cleared! Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). Scorecard email sent to ${result.emailRecipient || this.profile?.email}.`
-          : `Assignment evaluated. Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). Scorecard email sent to ${result.emailRecipient || this.profile?.email}.`;
+          ? `Assignment cleared! Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). ${emailDeliveryNotice}`
+          : `Assignment evaluated. Scored ${result.scorePoints}/${result.maxPoints} (${result.percentage}%). ${emailDeliveryNotice}`;
         if (result.certificate) {
           this.certificates = [result.certificate,
             ...this.certificates.filter(item => item.id !== result.certificate?.id)];
@@ -886,6 +924,23 @@ export class StudentDashboardComponent implements OnInit {
   closeReview(): void {
     this.activeReview = null;
     this.reviewError = null;
+  }
+
+  testSendEmail(): void {
+    this.sendingTestEmail = true;
+    this.testEmailMessage = null;
+    this.learningService.testScorecardEmail().subscribe({
+      next: res => {
+        this.sendingTestEmail = false;
+        this.testEmailSuccess = res.success;
+        this.testEmailMessage = res.message;
+      },
+      error: err => {
+        this.sendingTestEmail = false;
+        this.testEmailSuccess = false;
+        this.testEmailMessage = err?.error?.message || 'Failed to connect to SMTP server. Verify application-local.properties credentials.';
+      }
+    });
   }
 
   private loadRecommendations(): void {

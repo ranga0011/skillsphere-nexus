@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.skillsphere.skill.repository.EmployeeRepository;
+import com.skillsphere.skill.repository.StudentRepository;
 import com.skillsphere.skill.security.JwtService;
 import com.skillsphere.skill.service.AssessmentEmailService;
+import com.skillsphere.skill.service.AssessmentEmailService.TestEmailResult;
 import com.skillsphere.skill.service.LearnerAssessmentService;
 import com.skillsphere.skill.service.LearningModels.AssessmentReviewView;
 import com.skillsphere.skill.service.LearningModels.AssessmentView;
@@ -27,11 +30,17 @@ import com.skillsphere.skill.service.LearningModels.SubmitAttemptRequest;
 public class LearnerAssessmentController {
     private final LearnerAssessmentService assessmentService;
     private final AssessmentEmailService emailService;
+    private final StudentRepository studentRepository;
+    private final EmployeeRepository employeeRepository;
 
     public LearnerAssessmentController(LearnerAssessmentService assessmentService,
-            AssessmentEmailService emailService) {
+            AssessmentEmailService emailService,
+            StudentRepository studentRepository,
+            EmployeeRepository employeeRepository) {
         this.assessmentService = assessmentService;
         this.emailService = emailService;
+        this.studentRepository = studentRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     @GetMapping("/assessments")
@@ -78,6 +87,23 @@ public class LearnerAssessmentController {
             return emailService.getEmailsForStudent(owner.studentId());
         }
         return emailService.getEmailsForEmployee(owner.employeeId());
+    }
+
+    @PostMapping("/test-scorecard-email")
+    public TestEmailResult testScorecardEmail(@AuthenticationPrincipal Jwt jwt) {
+        Learner owner = owner(jwt);
+        String recipient = null;
+        if (owner.studentId() != null) {
+            recipient = studentRepository.findById(owner.studentId())
+                    .map(com.skillsphere.skill.entity.Student::getEmail).orElse(null);
+        } else if (owner.employeeId() != null) {
+            recipient = employeeRepository.findById(owner.employeeId())
+                    .map(com.skillsphere.skill.entity.Employee::getEmail).orElse(null);
+        }
+        if (recipient == null || recipient.isBlank()) {
+            return new TestEmailResult(false, "Learner profile email is not set.");
+        }
+        return emailService.testSmtpConnection(recipient);
     }
 
     private Learner owner(Jwt jwt) {

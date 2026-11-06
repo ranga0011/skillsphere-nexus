@@ -82,14 +82,24 @@ public final class LearningModels {
             LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
             int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
             IssuedCertificateView certificate,
-            boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview) {
+            boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview,
+            String emailStatus, String emailDeliveryMessage) {
+        public AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
+                LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
+                int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
+                IssuedCertificateView certificate,
+                boolean emailDispatched, String emailRecipient, String emailSubject, String emailBodyPreview) {
+            this(attemptId, assessmentId, assessmentTitle, status, startedAt, submittedAt, attemptNumber,
+                    scorePoints, maxPoints, percentage, passed, passPercentage, certificate,
+                    emailDispatched, emailRecipient, emailSubject, emailBodyPreview, null, null);
+        }
         public AttemptResult(Long attemptId, Long assessmentId, String assessmentTitle,
                 LearnerAttemptStatus status, Instant startedAt, Instant submittedAt, int attemptNumber,
                 int scorePoints, int maxPoints, int percentage, boolean passed, int passPercentage,
                 IssuedCertificateView certificate) {
             this(attemptId, assessmentId, assessmentTitle, status, startedAt, submittedAt, attemptNumber,
                     scorePoints, maxPoints, percentage, passed, passPercentage, certificate,
-                    false, null, null, null);
+                    false, null, null, null, null, null);
         }
     }
 

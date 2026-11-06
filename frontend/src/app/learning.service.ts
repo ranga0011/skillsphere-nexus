@@ -53,6 +53,8 @@ export interface LearnerAttemptResult {
   emailRecipient?: string;
   emailSubject?: string;
   emailBodyPreview?: string;
+  emailStatus?: string;
+  emailDeliveryMessage?: string;
 }
 
 export interface LearningResourceRecommendation {
@@ -110,6 +112,10 @@ export class LearningService {
 
   getMyScorecardEmails(): Observable<ScorecardEmail[]> {
     return this.http.get<ScorecardEmail[]>(`${this.apiUrl}/my-scorecard-emails`);
+  }
+
+  testScorecardEmail(): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/test-scorecard-email`, {});
   }
 
   getRecommendations(frameworkId: number): Observable<LearningResourceRecommendation[]> {

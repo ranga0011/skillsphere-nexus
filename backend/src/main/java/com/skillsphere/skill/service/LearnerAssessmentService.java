@@ -301,10 +301,16 @@ public class LearnerAssessmentService {
 
     private AttemptResult result(LearnerAssessmentAttempt attempt, IssuedCertificateView certificate,
             AssessmentScorecardEmail email) {
-        boolean emailDispatched = email != null;
+        boolean emailDispatched = email != null && "DELIVERED".equalsIgnoreCase(email.getStatus());
         String recipient = email != null ? email.getRecipientEmail() : null;
         String subject = email != null ? email.getSubject() : null;
         String preview = email != null ? email.getBodyText() : null;
+        String emailStatus = email != null ? email.getStatus() : "NO_RECORD";
+        String emailMessage = email != null && "DELIVERED".equalsIgnoreCase(email.getStatus())
+                ? "Official scorecard email delivered to " + recipient
+                : (email != null && email.getStatus() != null && email.getStatus().startsWith("FAILED_SMTP")
+                    ? "SMTP Error: " + email.getStatus()
+                    : "Live Gmail delivery requires Google App Password in application-local.properties");
 
         return new AttemptResult(attempt.getId(), attempt.getAssessment().getId(),
                 attempt.getAssessment().getTitle(), attempt.getStatus(), attempt.getStartedAt(),
@@ -313,7 +319,7 @@ public class LearnerAssessmentService {
                 attempt.getMaxPoints() == null ? 0 : attempt.getMaxPoints(),
                 attempt.getPercentage() == null ? 0 : attempt.getPercentage(), attempt.isPassed(),
                 attempt.getAssessment().getPassPercentage(), certificate,
-                emailDispatched, recipient, subject, preview);
+                emailDispatched, recipient, subject, preview, emailStatus, emailMessage);
     }
 
     private long attemptCount(Long assessmentId, Long employeeId, Long studentId) {
