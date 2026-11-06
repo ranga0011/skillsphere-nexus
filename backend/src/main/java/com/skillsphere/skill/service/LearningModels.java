@@ -12,7 +12,11 @@ public final class LearningModels {
     }
 
     public record QuestionRequest(String prompt, List<String> options, Integer correctOptionIndex,
-            AssessmentDifficulty difficulty, Integer points) {
+            AssessmentDifficulty difficulty, Integer points, String explanation) {
+        public QuestionRequest(String prompt, List<String> options, Integer correctOptionIndex,
+                AssessmentDifficulty difficulty, Integer points) {
+            this(prompt, options, correctOptionIndex, difficulty, points, null);
+        }
     }
 
     public record AssessmentRequest(String title, String instructions, Long skillId,
@@ -46,7 +50,11 @@ public final class LearningModels {
     }
 
     public record QuestionView(Long id, String prompt, List<String> options,
-            AssessmentDifficulty difficulty, int points) {
+            AssessmentDifficulty difficulty, int points, String explanation) {
+        public QuestionView(Long id, String prompt, List<String> options,
+                AssessmentDifficulty difficulty, int points) {
+            this(id, prompt, options, difficulty, points, null);
+        }
     }
 
     public record AssessmentView(Long id, String title, String instructions, Long skillId,
@@ -102,6 +110,35 @@ public final class LearningModels {
             String bodyText,
             String status,
             Instant sentAt
+    ) {
+    }
+
+    public record QuestionReviewItem(
+            Long id,
+            String prompt,
+            List<String> options,
+            Integer correctOptionIndex,
+            Integer selectedOptionIndex,
+            boolean isCorrect,
+            AssessmentDifficulty difficulty,
+            int points,
+            String explanation
+    ) {
+    }
+
+    public record AssessmentReviewView(
+            Long assessmentId,
+            String assessmentTitle,
+            String courseTitle,
+            Long attemptId,
+            Integer attemptNumber,
+            Integer totalAttempts,
+            Integer scorePoints,
+            Integer maxPoints,
+            Integer percentage,
+            boolean passed,
+            Integer passPercentage,
+            List<QuestionReviewItem> questions
     ) {
     }
 

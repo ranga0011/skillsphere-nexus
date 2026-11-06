@@ -89,6 +89,8 @@ public class QuestionBankService {
                 question.setCorrectOptionIndex(qReq.correctOptionIndex());
                 question.setDifficulty(qReq.difficulty() != null ? qReq.difficulty() : AssessmentDifficulty.INTERMEDIATE);
                 question.setPoints(qReq.points() == null ? 1 : qReq.points());
+                question.setExplanation(qReq.explanation() != null && !qReq.explanation().isBlank()
+                        ? qReq.explanation().trim() : null);
                 questionRepository.save(question);
             }
         }
@@ -131,6 +133,8 @@ public class QuestionBankService {
         question.setCorrectOptionIndex(request.correctOptionIndex());
         question.setDifficulty(request.difficulty());
         question.setPoints(request.points() == null ? 1 : request.points());
+        question.setExplanation(request.explanation() != null && !request.explanation().isBlank()
+                ? request.explanation().trim() : null);
         questionRepository.save(question);
         return assessmentView(assessment, null);
     }
@@ -260,7 +264,7 @@ public class QuestionBankService {
 
     private QuestionView questionView(AssessmentQuestion question) {
         return new QuestionView(question.getId(), question.getPrompt(), question.getOptions(),
-                question.getDifficulty(), question.getPoints());
+                question.getDifficulty(), question.getPoints(), question.getExplanation());
     }
 
     private void validateResource(LearningResourceRequest request) {

@@ -23,6 +23,12 @@ public interface LearnerAssessmentAttemptRepository extends JpaRepository<Learne
     @EntityGraph(attributePaths = {"assessment", "assessment.skill"})
     List<LearnerAssessmentAttempt> findByEmployee_IdOrderByStartedAtDesc(Long employeeId);
 
+    @EntityGraph(attributePaths = {"assessment", "assessment.skill"})
+    List<LearnerAssessmentAttempt> findByAssessment_IdAndStudent_IdOrderByStartedAtDesc(Long assessmentId, Long studentId);
+
+    @EntityGraph(attributePaths = {"assessment", "assessment.skill"})
+    List<LearnerAssessmentAttempt> findByAssessment_IdAndEmployee_IdOrderByStartedAtDesc(Long assessmentId, Long employeeId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from LearnerAssessmentAttempt a where a.id = :id")
     Optional<LearnerAssessmentAttempt> findByIdForUpdate(@Param("id") Long id);

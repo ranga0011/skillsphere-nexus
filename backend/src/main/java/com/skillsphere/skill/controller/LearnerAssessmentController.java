@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.skillsphere.skill.security.JwtService;
 import com.skillsphere.skill.service.AssessmentEmailService;
 import com.skillsphere.skill.service.LearnerAssessmentService;
+import com.skillsphere.skill.service.LearningModels.AssessmentReviewView;
 import com.skillsphere.skill.service.LearningModels.AssessmentView;
 import com.skillsphere.skill.service.LearningModels.AttemptResult;
 import com.skillsphere.skill.service.LearningModels.ScorecardEmailView;
@@ -56,6 +57,18 @@ public class LearnerAssessmentController {
     public List<AttemptResult> history(@AuthenticationPrincipal Jwt jwt) {
         Learner owner = owner(jwt);
         return assessmentService.history(owner.employeeId(), owner.studentId());
+    }
+
+    @GetMapping("/attempts/{id}/review")
+    public AssessmentReviewView getAttemptReview(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        Learner owner = owner(jwt);
+        return assessmentService.getAttemptReview(id, owner.employeeId(), owner.studentId());
+    }
+
+    @GetMapping("/assessments/{id}/review")
+    public AssessmentReviewView getAssessmentReview(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        Learner owner = owner(jwt);
+        return assessmentService.getAssessmentReview(id, owner.employeeId(), owner.studentId());
     }
 
     @GetMapping("/my-scorecard-emails")

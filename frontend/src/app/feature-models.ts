@@ -244,3 +244,30 @@ export interface CreateAssessmentWithQuestionsRequest {
     points: number;
   }>;
 }
+
+export interface QuestionReviewItem {
+  id: number;
+  prompt: string;
+  options: string[];
+  correctOptionIndex: number;
+  selectedOptionIndex?: number | null;
+  isCorrect: boolean;
+  difficulty: string;
+  points: number;
+  explanation: string;
+}
+
+export interface AssessmentReviewView {
+  assessmentId: number;
+  assessmentTitle: string;
+  courseTitle?: string | null;
+  attemptId: number;
+  attemptNumber: number;
+  totalAttempts: number;
+  scorePoints: number;
+  maxPoints: number;
+  percentage: number;
+  passed: boolean;
+  passPercentage: number;
+  questions: QuestionReviewItem[];
+}

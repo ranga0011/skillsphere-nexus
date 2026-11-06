@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { IssuedCertificate, ScorecardEmail, CreateAssessmentWithQuestionsRequest } from './feature-models';
+import { IssuedCertificate, ScorecardEmail, CreateAssessmentWithQuestionsRequest, AssessmentReviewView } from './feature-models';
 
 export interface LearnerAssessment {
   id: number;
@@ -98,6 +98,14 @@ export class LearningService {
 
   getAttemptHistory(): Observable<LearnerAttemptResult[]> {
     return this.http.get<LearnerAttemptResult[]>(`${this.apiUrl}/attempts`);
+  }
+
+  getAttemptReview(attemptId: number): Observable<AssessmentReviewView> {
+    return this.http.get<AssessmentReviewView>(`${this.apiUrl}/attempts/${attemptId}/review`);
+  }
+
+  getAssessmentReview(assessmentId: number): Observable<AssessmentReviewView> {
+    return this.http.get<AssessmentReviewView>(`${this.apiUrl}/assessments/${assessmentId}/review`);
   }
 
   getMyScorecardEmails(): Observable<ScorecardEmail[]> {

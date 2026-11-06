@@ -59,6 +59,10 @@ public class AssessmentQuestion {
     @Column(nullable = false)
     private int points = 1;
 
+    @Size(max = 2000)
+    @Column(length = 2000)
+    private String explanation;
+
     public AssessmentQuestion() {
     }
 
@@ -75,4 +79,6 @@ public class AssessmentQuestion {
     public void setDifficulty(AssessmentDifficulty difficulty) { this.difficulty = difficulty; }
     public int getPoints() { return points; }
     public void setPoints(int points) { this.points = points; }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
 }

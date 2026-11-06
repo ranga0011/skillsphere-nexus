@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { Assessment, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student } from './feature-models';
+import { Assessment, AssessmentReviewView, CompetencyFramework, CompetencyGapReport, EmployeeSkillAssignment, IssuedCertificate, Student } from './feature-models';
 import { FrameworkService } from './framework.service';
 import { IssuedCertificateService } from './issued-certificate.service';
 import { SkillService } from './skill.service';
@@ -172,6 +172,27 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           </button>
         </div>
         <p *ngIf="!availableAssessmentsLoading && availableAssessments.length === 0">No active assessments are available for your profile right now.</p>
+
+        <!-- Completed Assessments Review Callout -->
+        <div class="completed-review-box" *ngIf="completedAssessmentsWithReview.length > 0">
+          <h3>Completed Assessments - Review Unlocked</h3>
+          <p>You have completed 3 attempts (or passed) for the following assessments. You can inspect all questions, correct answers, and in-depth technical explanations at any time.</p>
+          <div class="completed-cards-grid">
+            <div class="completed-card" *ngFor="let c of completedAssessmentsWithReview">
+              <div class="completed-card-info">
+                <strong>{{ c.assessmentTitle }}</strong>
+                <small *ngIf="c.courseTitle">Course: {{ c.courseTitle }}</small>
+                <div class="completed-card-tags">
+                  <span class="status-pill sm" [class.success]="c.passed" [class.warning]="!c.passed">{{ c.passed ? 'PASSED' : 'COMPLETED' }} (Best: {{ c.percentage }}%)</span>
+                  <span class="attempts-count-tag">{{ c.attemptCount }} Attempt(s) completed</span>
+                </div>
+              </div>
+              <button class="review-action-btn-sm" type="button" (click)="openReviewByAttempt(c.attemptId)" [disabled]="loadingReview">
+                Review Questions &amp; Answers
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="attempt-panel" *ngIf="activeAttempt as attempt">
           <div class="attempt-header">
             <span class="course-assignment-badge" *ngIf="attempt.assessment.courseTitle">COURSE: {{ attempt.assessment.courseTitle }}</span>
@@ -237,22 +258,56 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
           </div>
         </div>
 
-        <div class="result-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+        <div class="result-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
           <button class="primary-btn" type="button" *ngIf="result.certificate" (click)="download(result.certificate)">
             Download Certificate {{ result.certificate.certificateNumber }} PDF
           </button>
+          <button
+            class="review-action-btn"
+            type="button"
+            *ngIf="canReviewAttempt(result)"
+            (click)="openReviewByAttempt(result.attemptId)"
+            [disabled]="loadingReview"
+          >
+            [REVIEW] View All Questions, Answers &amp; Explanations
+          </button>
+          <span class="review-locked-notice" *ngIf="!canReviewAttempt(result)">
+            [LOCKED] Full answer key &amp; explanations unlock after completing 3 attempts ({{ getAttemptsUntilReview(result.assessmentId) }} attempt(s) remaining)
+          </span>
         </div>
       </section>
 
       <section class="panel">
-        <h2>Online assessment attempts history</h2>
+        <div class="panel-heading">
+          <div>
+            <h2>Online assessment attempts history</h2>
+            <p>Full question review with correct answers and technical explanations unlocks after completing 3 attempts or passing.</p>
+          </div>
+        </div>
+        <p class="error-message" *ngIf="reviewError">{{ reviewError }}</p>
         <div class="table-wrap">
-          <table><thead><tr><th>ASSESSMENT</th><th>ATTEMPT</th><th>RESULT</th><th>SUBMITTED</th><th>STATUS</th></tr></thead>
+          <table>
+            <thead><tr><th>ASSESSMENT</th><th>ATTEMPT</th><th>RESULT</th><th>SUBMITTED</th><th>STATUS</th><th>REVIEW &amp; EXPLANATION</th></tr></thead>
             <tbody><tr *ngFor="let item of attemptHistory">
               <td>{{ item.assessmentTitle }}</td><td>{{ item.attemptNumber }}</td>
               <td>{{ item.scorePoints }}/{{ item.maxPoints }} ({{ item.percentage }}%)</td>
-              <td>{{ item.submittedAt }}</td><td><span class="status-pill" [class.success]="item.passed" [class.warning]="!item.passed">{{ item.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
-            </tr><tr *ngIf="attemptHistory.length === 0"><td colspan="5">No online assessment attempts submitted yet.</td></tr></tbody>
+              <td>{{ item.submittedAt }}</td>
+              <td><span class="status-pill" [class.success]="item.passed" [class.warning]="!item.passed">{{ item.passed ? 'PASSED' : 'NOT PASSED' }}</span></td>
+              <td class="actions">
+                <button
+                  class="review-action-btn-sm"
+                  type="button"
+                  *ngIf="canReviewAttempt(item)"
+                  (click)="openReviewByAttempt(item.attemptId)"
+                  [disabled]="loadingReview"
+                >
+                  Review Answers &amp; Explanations
+                </button>
+                <span class="review-lock-pill" *ngIf="!canReviewAttempt(item)">
+                  Locked ({{ getAttemptsUntilReview(item.assessmentId) }} left)
+                </span>
+              </td>
+            </tr><tr *ngIf="attemptHistory.length === 0"><td colspan="6">No online assessment attempts submitted yet.</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -298,6 +353,84 @@ import { LearningService, LearnerAssessment, LearnerAttemptResult, LearningResou
         </div>
       </section>
 
+      <!-- Comprehensive Questions & Answers Review Modal -->
+      <div class="review-modal-backdrop" *ngIf="activeReview as review" (click)="closeReview()">
+        <div class="review-modal-dialog" (click)="$event.stopPropagation()">
+          <div class="review-modal-header">
+            <div>
+              <span class="course-assignment-badge" *ngIf="review.courseTitle">COURSE: {{ review.courseTitle }}</span>
+              <h2>{{ review.assessmentTitle }} - Question Review &amp; Explanations</h2>
+              <div class="review-summary-bar">
+                <span class="review-pill">Attempt #{{ review.attemptNumber }} of {{ review.totalAttempts }}</span>
+                <span class="review-pill score">Score: <strong>{{ review.scorePoints }} / {{ review.maxPoints }}</strong> ({{ review.percentage }}%)</span>
+                <span class="status-pill" [class.success]="review.passed" [class.warning]="!review.passed">
+                  {{ review.passed ? 'PASSED' : 'NOT PASSED' }}
+                </span>
+                <span class="review-pill min-pass">Pass Requirement: {{ review.passPercentage }}%</span>
+              </div>
+            </div>
+            <button class="review-modal-close" type="button" (click)="closeReview()" aria-label="Close">&times;</button>
+          </div>
+
+          <div class="review-modal-body">
+            <div class="review-banner-alert">
+              <strong>[ANSWER KEY &amp; CONCEPT EXPLANATIONS UNLOCKED]</strong>
+              <p>You have completed 3 attempts (or passed). Review the questions below with the correct answers highlighted, your submitted answers noted, and clear technical concept explanations for each question.</p>
+            </div>
+
+            <div class="review-questions-list">
+              <div class="review-question-card" *ngFor="let q of review.questions; let qIdx = index" [class.is-correct]="q.isCorrect" [class.is-wrong]="!q.isCorrect">
+                <div class="review-q-header">
+                  <div class="review-q-meta">
+                    <span class="review-q-num">Question {{ qIdx + 1 }} of {{ review.questions.length }}</span>
+                    <span class="test-badge-diff" [class]="q.difficulty ? q.difficulty.toLowerCase() : 'intermediate'">{{ q.difficulty || 'Intermediate' }}</span>
+                    <span class="test-badge-points">{{ q.points }} point{{ q.points > 1 ? 's' : '' }}</span>
+                  </div>
+                  <div class="review-q-result">
+                    <span class="review-status-tag" [class.tag-correct]="q.isCorrect" [class.tag-wrong]="!q.isCorrect">
+                      {{ q.isCorrect ? '[CORRECT] +' + q.points + ' pts' : '[INCORRECT] 0/' + q.points + ' pts' }}
+                    </span>
+                  </div>
+                </div>
+
+                <h4 class="review-question-prompt">{{ q.prompt }}</h4>
+
+                <div class="review-options-list">
+                  <div
+                    class="review-option-row"
+                    *ngFor="let opt of q.options; let optIdx = index"
+                    [class.correct-option]="optIdx === q.correctOptionIndex"
+                    [class.user-wrong]="optIdx === q.selectedOptionIndex && !q.isCorrect"
+                    [class.user-correct]="optIdx === q.selectedOptionIndex && q.isCorrect"
+                  >
+                    <span class="option-letter-badge">{{ getOptionLetter(optIdx) }}</span>
+                    <span class="option-text">{{ opt }}</span>
+                    <div class="option-tags">
+                      <span class="ans-badge correct-badge" *ngIf="optIdx === q.correctOptionIndex">[CORRECT ANSWER]</span>
+                      <span class="ans-badge user-correct-badge" *ngIf="optIdx === q.selectedOptionIndex && q.isCorrect">[YOUR ANSWER - CORRECT]</span>
+                      <span class="ans-badge user-wrong-badge" *ngIf="optIdx === q.selectedOptionIndex && !q.isCorrect">[YOUR ANSWER - INCORRECT]</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Technical Concept & Explanation Box -->
+                <div class="explanation-box">
+                  <div class="explanation-title">
+                    <span class="concept-icon">[CONCEPT]</span>
+                    <strong>Technical Concept &amp; Detailed Explanation</strong>
+                  </div>
+                  <p class="explanation-content">{{ q.explanation }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-modal-footer">
+            <button class="primary-btn" type="button" (click)="closeReview()">Close Review</button>
+          </div>
+        </div>
+      </div>
+
       <footer><button class="secondary-btn" type="button" (click)="logout()">Sign out</button></footer>
     </main>
   `,
@@ -315,6 +448,9 @@ export class StudentDashboardComponent implements OnInit {
   attemptHistory: LearnerAttemptResult[] = [];
   activeAttempt: StartedAssessment | null = null;
   latestAttemptResult: LearnerAttemptResult | null = null;
+  activeReview: AssessmentReviewView | null = null;
+  loadingReview = false;
+  reviewError: string | null = null;
   recommendations: LearningResourceRecommendation[] = [];
   skillId: number | null = null;
   frameworkId: number | null = null;
@@ -365,6 +501,46 @@ export class StudentDashboardComponent implements OnInit {
       (c.issuerName && c.issuerName.toLowerCase().includes(q)) ||
       (c.status && c.status.toLowerCase().includes(q))
     );
+  }
+
+  get completedAssessmentsWithReview(): Array<{
+    assessmentId: number;
+    assessmentTitle: string;
+    courseTitle?: string;
+    attemptId: number;
+    attemptCount: number;
+    passed: boolean;
+    percentage: number;
+  }> {
+    const map = new Map<number, {
+      assessmentId: number;
+      assessmentTitle: string;
+      courseTitle?: string;
+      attemptId: number;
+      attemptCount: number;
+      passed: boolean;
+      percentage: number;
+    }>();
+
+    for (const item of this.attemptHistory) {
+      const existing = map.get(item.assessmentId);
+      if (!existing) {
+        map.set(item.assessmentId, {
+          assessmentId: item.assessmentId,
+          assessmentTitle: item.assessmentTitle,
+          attemptId: item.attemptId,
+          attemptCount: 1,
+          passed: item.passed,
+          percentage: item.percentage
+        });
+      } else {
+        existing.attemptCount++;
+        if (item.passed) existing.passed = true;
+        if (item.percentage > existing.percentage) existing.percentage = item.percentage;
+      }
+    }
+
+    return Array.from(map.values()).filter(c => c.attemptCount >= 3 || c.passed || !this.availableAssessments.some(a => a.id === c.assessmentId && a.attemptsRemaining > 0));
   }
   successMessage = '';
 
@@ -648,6 +824,68 @@ export class StudentDashboardComponent implements OnInit {
   getOptionLetter(index: number): string {
     const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
     return letters[index] || String(index + 1);
+  }
+
+  getAttemptsCountForAssessment(assessmentId: number): number {
+    return this.attemptHistory.filter(item => item.assessmentId === assessmentId).length;
+  }
+
+  canReviewAssessment(assessmentId: number): boolean {
+    const attempts = this.attemptHistory.filter(item => item.assessmentId === assessmentId);
+    if (attempts.length >= 3) return true;
+    if (attempts.some(item => item.passed)) return true;
+    const available = this.availableAssessments.find(a => a.id === assessmentId);
+    if (available && available.attemptsRemaining <= 0) return true;
+    return false;
+  }
+
+  canReviewAttempt(item: LearnerAttemptResult): boolean {
+    const attempts = this.attemptHistory.filter(h => h.assessmentId === item.assessmentId);
+    if (attempts.length >= 3) return true;
+    if (item.passed) return true;
+    const available = this.availableAssessments.find(a => a.id === item.assessmentId);
+    if (available && available.attemptsRemaining <= 0) return true;
+    return false;
+  }
+
+  getAttemptsUntilReview(assessmentId: number): number {
+    const count = this.getAttemptsCountForAssessment(assessmentId);
+    return Math.max(0, 3 - count);
+  }
+
+  openReviewByAttempt(attemptId: number): void {
+    this.loadingReview = true;
+    this.reviewError = null;
+    this.learningService.getAttemptReview(attemptId).subscribe({
+      next: review => {
+        this.activeReview = review;
+        this.loadingReview = false;
+      },
+      error: (err) => {
+        this.loadingReview = false;
+        this.reviewError = err?.error?.message || 'Question review and explanations unlock after 3 attempts or passing the assessment.';
+      }
+    });
+  }
+
+  openReviewByAssessment(assessmentId: number): void {
+    this.loadingReview = true;
+    this.reviewError = null;
+    this.learningService.getAssessmentReview(assessmentId).subscribe({
+      next: review => {
+        this.activeReview = review;
+        this.loadingReview = false;
+      },
+      error: (err) => {
+        this.loadingReview = false;
+        this.reviewError = err?.error?.message || 'Question review and explanations unlock after 3 attempts or passing the assessment.';
+      }
+    });
+  }
+
+  closeReview(): void {
+    this.activeReview = null;
+    this.reviewError = null;
   }
 
   private loadRecommendations(): void {

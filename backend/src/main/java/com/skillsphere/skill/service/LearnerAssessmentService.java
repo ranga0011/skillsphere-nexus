@@ -2,6 +2,7 @@ package com.skillsphere.skill.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,10 @@ import com.skillsphere.skill.repository.LearnerAssessmentAttemptRepository;
 import com.skillsphere.skill.repository.LearnerAttemptAnswerRepository;
 import com.skillsphere.skill.repository.StudentRepository;
 import com.skillsphere.skill.service.CertificateModels.IssuedCertificateView;
+import com.skillsphere.skill.service.LearningModels.AssessmentReviewView;
 import com.skillsphere.skill.service.LearningModels.AssessmentView;
 import com.skillsphere.skill.service.LearningModels.AttemptResult;
+import com.skillsphere.skill.service.LearningModels.QuestionReviewItem;
 import com.skillsphere.skill.service.LearningModels.QuestionView;
 import com.skillsphere.skill.service.LearningModels.StartedAttempt;
 import com.skillsphere.skill.service.LearningModels.SubmitAttemptRequest;
@@ -202,6 +205,98 @@ public class LearnerAssessmentService {
                         ? null
                         : certificateService.getForAssessment(attempt.getSkillAssessment().getId()).orElse(null), null))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public AssessmentReviewView getAttemptReview(Long attemptId, Long employeeId, Long studentId) {
+        requireOneOwner(employeeId, studentId);
+        LearnerAssessmentAttempt attempt = attemptRepository.findById(attemptId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assessment attempt not found: " + attemptId));
+        requireOwner(attempt, employeeId, studentId);
+        if (attempt.getStatus() != LearnerAttemptStatus.SUBMITTED) {
+            throw new IllegalStateException("Review is only available after submitting the assessment");
+        }
+
+        AssessmentDefinition assessment = attempt.getAssessment();
+        long totalAttempts = attemptCount(assessment.getId(), employeeId, studentId);
+        int maxAttempts = assessment.getMaxAttempts();
+
+        boolean unlocked = totalAttempts >= 3 || totalAttempts >= maxAttempts || attempt.isPassed();
+        if (!unlocked) {
+            throw new IllegalStateException(String.format(
+                    "Question review with answers and detailed explanations unlocks after completing 3 attempts (or exhausting all %d attempts). Current attempts completed: %d. Remaining until unlock: %d.",
+                    maxAttempts, totalAttempts, Math.max(0, 3 - totalAttempts)));
+        }
+
+        List<AssessmentQuestion> questions = questionRepository.findByAssessment_IdOrderById(assessment.getId());
+        List<LearnerAttemptAnswer> attemptAnswers = answerRepository.findByAttempt_Id(attemptId);
+        Map<Long, Integer> selectedMap = new HashMap<>();
+        for (LearnerAttemptAnswer ans : attemptAnswers) {
+            selectedMap.put(ans.getQuestion().getId(), ans.getSelectedOptionIndex());
+        }
+
+        List<QuestionReviewItem> reviewItems = new ArrayList<>();
+        for (AssessmentQuestion q : questions) {
+            Integer selectedIdx = selectedMap.get(q.getId());
+            int correctIdx = q.getCorrectOptionIndex();
+            boolean isCorrect = selectedIdx != null && selectedIdx == correctIdx;
+            String explanation = q.getExplanation();
+            if (explanation == null || explanation.isBlank()) {
+                explanation = generateDefaultExplanation(q);
+            }
+            reviewItems.add(new QuestionReviewItem(
+                    q.getId(),
+                    q.getPrompt(),
+                    q.getOptions(),
+                    correctIdx,
+                    selectedIdx,
+                    isCorrect,
+                    q.getDifficulty(),
+                    q.getPoints(),
+                    explanation
+            ));
+        }
+
+        return new AssessmentReviewView(
+                assessment.getId(),
+                assessment.getTitle(),
+                assessment.getCourseTitle(),
+                attempt.getId(),
+                attempt.getAttemptNumber(),
+                (int) totalAttempts,
+                attempt.getScorePoints() != null ? attempt.getScorePoints() : 0,
+                attempt.getMaxPoints() != null ? attempt.getMaxPoints() : 0,
+                attempt.getPercentage() != null ? attempt.getPercentage() : 0,
+                attempt.isPassed(),
+                assessment.getPassPercentage(),
+                reviewItems
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public AssessmentReviewView getAssessmentReview(Long assessmentId, Long employeeId, Long studentId) {
+        requireOneOwner(employeeId, studentId);
+        List<LearnerAssessmentAttempt> attempts = studentId != null
+                ? attemptRepository.findByAssessment_IdAndStudent_IdOrderByStartedAtDesc(assessmentId, studentId)
+                : attemptRepository.findByAssessment_IdAndEmployee_IdOrderByStartedAtDesc(assessmentId, employeeId);
+
+        LearnerAssessmentAttempt targetAttempt = attempts.stream()
+                .filter(a -> a.getStatus() == LearnerAttemptStatus.SUBMITTED)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("No completed attempts found for assessment: " + assessmentId));
+
+        return getAttemptReview(targetAttempt.getId(), employeeId, studentId);
+    }
+
+    private String generateDefaultExplanation(AssessmentQuestion q) {
+        String correctOptionText = (q.getOptions() != null && q.getCorrectOptionIndex() >= 0
+                && q.getCorrectOptionIndex() < q.getOptions().size())
+                ? q.getOptions().get(q.getCorrectOptionIndex())
+                : "Option " + (q.getCorrectOptionIndex() + 1);
+        return String.format(
+                "The correct answer is '%s'. This follows enterprise industry standards and architectural best practices for %s-level competency.",
+                correctOptionText,
+                q.getDifficulty() != null ? q.getDifficulty().name().toLowerCase() : "technical");
     }
 
     private AttemptResult result(LearnerAssessmentAttempt attempt, IssuedCertificateView certificate,

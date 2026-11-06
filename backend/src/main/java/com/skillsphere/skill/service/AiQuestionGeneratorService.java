@@ -83,7 +83,8 @@ public class AiQuestionGeneratorService {
         list.add(new QuestionRequest(
                 "In Spring Boot, which annotation is recommended on configuration classes to declare beans and enable component scanning?",
                 List.of("@SpringBootApplication", "@EnableAutoConfiguration", "@Component", "@Service"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "The @SpringBootApplication annotation aggregates @Configuration, @EnableAutoConfiguration, and @ComponentScan, enabling automatic bean wiring and component discovery."));
 
         list.add(new QuestionRequest(
                 "Why is constructor-based dependency injection preferred over field injection (@Autowired on fields)?",
@@ -91,12 +92,14 @@ public class AiQuestionGeneratorService {
                         "Field injection is deprecated in Java 17",
                         "Constructor injection uses less memory in the JVM",
                         "Constructor injection only works with singleton beans"),
-                0, AssessmentDifficulty.INTERMEDIATE, 2));
+                0, AssessmentDifficulty.INTERMEDIATE, 2,
+                "Constructor injection enforces immutability with final fields, makes testing straightforward without mock reflection, and guarantees required dependencies are supplied at bean instantiation."));
 
         list.add(new QuestionRequest(
                 "Which Spring Data JPA repository method suffix automatically creates an SQL query matching a case-insensitive name search?",
                 List.of("findByNameIgnoreCase", "findByNameLikeUpper", "findByNameInsensitive", "queryByNameCaseInsensitive"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "Spring Data JPA query method parser recognizes 'IgnoreCase' to generate uppercase or lowercase SQL comparison functions in the resulting query."));
 
         list.add(new QuestionRequest(
                 "In Spring Security 6 / Spring Boot 3+, how should stateless REST API authentication be configured in SecurityFilterChain?",
@@ -104,17 +107,20 @@ public class AiQuestionGeneratorService {
                         "http.disableSessions()",
                         "http.statelessMode(true)",
                         "security.jwt.enabled(true)"),
-                0, AssessmentDifficulty.ADVANCED, 2));
+                0, AssessmentDifficulty.ADVANCED, 2,
+                "Stateless REST APIs must configure SessionCreationPolicy.STATELESS in Spring Security 6+ so the container does not create or store HTTP sessions, relying on bearer tokens per request."));
 
         list.add(new QuestionRequest(
                 "What is the default isolation level for Spring @Transactional when running on PostgreSQL?",
                 List.of("READ_COMMITTED", "READ_UNCOMMITTED", "REPEATABLE_READ", "SERIALIZABLE"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "PostgreSQL defaults to READ_COMMITTED isolation level, which prevents dirty reads while allowing concurrent transactions to read only committed state."));
 
         list.add(new QuestionRequest(
                 "Which Spring Boot Actuator endpoint exposes system health, readiness, and liveness probes for container environments?",
                 List.of("/actuator/health", "/actuator/info", "/actuator/metrics", "/actuator/status"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "The /actuator/health endpoint provides structured health, readiness, and liveness probe statuses essential for container orchestrators like Kubernetes."));
 
         list.add(new QuestionRequest(
                 "What is the primary benefit of using Virtual Threads (Project Loom) in modern Spring Boot 3.2+ applications?",
@@ -122,7 +128,8 @@ public class AiQuestionGeneratorService {
                         "Faster CPU matrix calculations",
                         "Automatic garbage collection bypass",
                         "Eliminating the need for Spring Data repositories"),
-                0, AssessmentDifficulty.ADVANCED, 2));
+                0, AssessmentDifficulty.ADVANCED, 2,
+                "Virtual threads (Project Loom) in Java 21 / Spring Boot 3.2+ are lightweight user-space threads that drastically increase concurrency and throughput for blocking I/O workloads."));
 
         return list;
     }
@@ -132,7 +139,8 @@ public class AiQuestionGeneratorService {
         list.add(new QuestionRequest(
                 "In Kubernetes architecture, what is the smallest deployable computing unit that can be created and managed?",
                 List.of("Pod", "Node", "Container", "Cluster"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "In Kubernetes, a Pod is the smallest deployable execution unit, encapsulating one or more containers sharing network namespaces and storage volumes."));
 
         list.add(new QuestionRequest(
                 "In a multi-stage Dockerfile, what is the primary architectural purpose of separating the build stage from the runtime stage?",
@@ -140,12 +148,14 @@ public class AiQuestionGeneratorService {
                         "To compile code in parallel across CPU cores",
                         "To allow root access during build only",
                         "To bypass Docker image registry rate limits"),
-                0, AssessmentDifficulty.INTERMEDIATE, 2));
+                0, AssessmentDifficulty.INTERMEDIATE, 2,
+                "Multi-stage builds compile artifacts in an intermediate builder stage and copy only the runtime artifact to a lean base image, dramatically shrinking image footprint and attack surface."));
 
         list.add(new QuestionRequest(
                 "Which Kubernetes Service type creates a cloud provider load balancer with an external public IP address?",
                 List.of("LoadBalancer", "ClusterIP", "NodePort", "ExternalName"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "A Kubernetes Service of type LoadBalancer provisions an external cloud-provider load balancer (e.g., AWS NLB/ALB) and assigns an externally reachable IP address."));
 
         list.add(new QuestionRequest(
                 "In CI/CD pipeline automation, what does the term 'GitOps' primarily signify?",
@@ -153,7 +163,8 @@ public class AiQuestionGeneratorService {
                         "Running git clone commands in GitHub Actions",
                         "Merging pull requests automatically without review",
                         "Storing database passwords directly inside git commits"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "GitOps establishes Git repositories as the single source of truth for declared infrastructure and application configuration, using automated reconcilers to apply changes."));
 
         list.add(new QuestionRequest(
                 "What is the primary purpose of a Kubernetes Ingress Controller?",
@@ -161,12 +172,14 @@ public class AiQuestionGeneratorService {
                         "Scheduling Pods onto specific worker nodes",
                         "Storing persistent volume claims",
                         "Executing database backups automatically"),
-                0, AssessmentDifficulty.ADVANCED, 2));
+                0, AssessmentDifficulty.ADVANCED, 2,
+                "An Ingress Controller functions as a cluster gateway handling HTTP/HTTPS reverse proxying, SSL termination, and host/path routing to internal cluster services."));
 
         list.add(new QuestionRequest(
                 "In AWS IAM security best practices, what should be attached to EC2 instances or ECS tasks rather than hardcoding static access keys?",
                 List.of("IAM Instance Profiles / Execution Roles", "Root Account Access Keys", "Access Key ID in environment variables", "SSH Key Pairs"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "IAM Instance Profiles and task execution roles attach temporary, auto-rotated credentials to compute instances, eliminating insecure hardcoded access keys."));
 
         return list;
     }
@@ -176,17 +189,20 @@ public class AiQuestionGeneratorService {
         list.add(new QuestionRequest(
                 "In modern Angular (v16+), what reactive primitive allows fine-grained, zone-less reactivity and computed values?",
                 List.of("Signals", "Promises", "Callbacks", "Two-way ngModel bindings"),
-                0, AssessmentDifficulty.INTERMEDIATE, 2));
+                0, AssessmentDifficulty.INTERMEDIATE, 2,
+                "Angular Signals (v16+) provide a reactive value primitive that tracks read operations and dependencies fine-grainedly, optimizing change detection without Zone.js overhead."));
 
         list.add(new QuestionRequest(
                 "In standalone Angular components, where are dependent components, directives, and modules explicitly imported?",
                 List.of("In the 'imports' array of the @Component decorator", "In app.module.ts only", "In angular.json", "In index.html script tags"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "Standalone components declare dependencies directly in the imports array of their @Component metadata, bypassing traditional NgModule declarations."));
 
         list.add(new QuestionRequest(
                 "Which Angular Router guard interface is used to prevent unauthorized users from accessing a route?",
                 List.of("canActivate", "canDeactivate", "resolve", "canMatch"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "The canActivate route guard verifies authentication and permissions before granting access to a requested Angular route."));
 
         list.add(new QuestionRequest(
                 "What is the primary difference between RxJS switchMap and mergeMap in HTTP request handling?",
@@ -194,12 +210,14 @@ public class AiQuestionGeneratorService {
                         "mergeMap cancels pending requests",
                         "switchMap cannot be used with HTTP observables",
                         "There is no difference; they are aliases"),
-                0, AssessmentDifficulty.ADVANCED, 2));
+                0, AssessmentDifficulty.ADVANCED, 2,
+                "switchMap cancels previous pending inner observables when a new outer emission occurs, preventing stale HTTP responses, whereas mergeMap executes all requests concurrently."));
 
         list.add(new QuestionRequest(
                 "What is the correct syntax for two-way data binding in an Angular template with FormsModule?",
                 List.of("[(ngModel)]=\"value\"", "([ngModel])=\"value\"", "{{ngModel: value}}", "[ngModel]=\"value\""),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "Angular two-way data binding uses the banana-in-a-box syntax [()] combining property binding [] and event binding ()."));
 
         return list;
     }
@@ -209,17 +227,20 @@ public class AiQuestionGeneratorService {
         list.add(new QuestionRequest(
                 "Which standard transaction ACID property guarantees that all database updates in a fund transfer occur completely or not at all?",
                 List.of("Atomicity", "Consistency", "Isolation", "Durability"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "Atomicity in ACID transactions guarantees that all operations succeed or all fail together, preventing partial balance updates during fund transfers."));
 
         list.add(new QuestionRequest(
                 "What international ISO standard defines the global messaging framework for cross-border wire transfers and financial transactions?",
                 List.of("ISO 20022", "ISO 9001", "ISO 27001", "ISO 8583"),
-                0, AssessmentDifficulty.INTERMEDIATE, 2));
+                0, AssessmentDifficulty.INTERMEDIATE, 2,
+                "ISO 20022 is the universal XML and JSON financial messaging standard modernizing cross-border interbank communications and settlement."));
 
         list.add(new QuestionRequest(
                 "In PCI-DSS compliant payment processing, what technique replaces sensitive Primary Account Numbers (PAN) with non-exploitable identifiers?",
                 List.of("Tokenization", "Base64 encoding", "MD5 hashing", "Symmetric XOR obfuscation"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "Tokenization replaces sensitive Primary Account Numbers (PAN) with nonsensitive surrogate tokens, fulfilling PCI-DSS data protection requirements."));
 
         list.add(new QuestionRequest(
                 "In accounting and core banking ledger systems, why is the double-entry bookkeeping model mandatory?",
@@ -227,7 +248,8 @@ public class AiQuestionGeneratorService {
                         "It allows transactions to be recorded twice for redundancy",
                         "It doubles transaction processing speed",
                         "It automatically refunds failed payments"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "Double-entry bookkeeping mandates that every debit has a matching credit, ensuring ledger balance and complete auditability for all accounts."));
 
         return list;
     }
@@ -240,7 +262,8 @@ public class AiQuestionGeneratorService {
                         "Randomly distributed based on consumer capacity",
                         "Sorted by timestamp in memory only",
                         "Ordered alphabetically by key"),
-                0, AssessmentDifficulty.INTERMEDIATE, 2));
+                0, AssessmentDifficulty.INTERMEDIATE, 2,
+                "Kafka partitions are append-only ordered commit logs where messages receive immutable monotonically increasing sequential offset identifiers."));
 
         list.add(new QuestionRequest(
                 "What is the primary indicator of an overfitted machine learning model during validation?",
@@ -248,12 +271,14 @@ public class AiQuestionGeneratorService {
                         "Low training accuracy and low validation accuracy",
                         "Validation loss decreasing alongside training loss",
                         "Model inference time exceeding 1 second"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "Overfitting happens when a model learns training data noise, characterized by high training performance but poor generalization and accuracy on unseen validation data."));
 
         list.add(new QuestionRequest(
                 "In modern Large Language Models (LLMs), what architectural mechanism allows tokens to attend dynamically to relevant context across the sequence?",
                 List.of("Multi-Head Self-Attention", "Recurrent LSTM gating", "Convolutional Max-Pooling", "Markov Decision Chains"),
-                0, AssessmentDifficulty.ADVANCED, 2));
+                0, AssessmentDifficulty.ADVANCED, 2,
+                "Multi-Head Self-Attention dynamically scores contextual relationships between tokens across sequence positions, powering modern transformer and LLM architectures."));
 
         return list;
     }
@@ -266,17 +291,20 @@ public class AiQuestionGeneratorService {
                         "Choose between Performance and Security",
                         "Choose between Latency and Throughput",
                         "Choose between Encryption and Compression"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "The CAP theorem states that distributed data stores under a network partition (P) must choose between Consistency (C) and Availability (A)."));
 
         list.add(new QuestionRequest(
                 "What microservices resilience pattern temporarily halts calls to a failing downstream service to allow recovery?",
                 List.of("Circuit Breaker", "Bulkhead", "Saga Pattern", "Event Sourcing"),
-                0, AssessmentDifficulty.INTERMEDIATE, 1));
+                0, AssessmentDifficulty.INTERMEDIATE, 1,
+                "The Circuit Breaker pattern detects failures and stops cascading requests to unhealthy downstream services, giving them time to recover."));
 
         list.add(new QuestionRequest(
                 "Which HTTP method is defined by RFC 7231 as both safe and idempotent?",
                 List.of("GET", "POST", "PATCH", "CONNECT"),
-                0, AssessmentDifficulty.BEGINNER, 1));
+                0, AssessmentDifficulty.BEGINNER, 1,
+                "RFC 7231 classifies HTTP GET as safe (read-only, no server-side mutations) and idempotent (repeated identical calls produce the same server state)."));
 
         return list;
     }
@@ -291,7 +319,8 @@ public class AiQuestionGeneratorService {
                         "Deploying monolithic architectures without automated health checks or rollback strategies"),
                 0,
                 AssessmentDifficulty.INTERMEDIATE,
-                1
+                1,
+                "Enterprise systems require modular architecture, automated test suites, CI/CD pipelines, and secure secret handling to maintain reliability and compliance."
         );
     }
 }
